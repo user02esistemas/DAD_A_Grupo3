@@ -25,6 +25,8 @@
             <Button text="&#x1F4C5; Reservas Buffet" onAction="#navigate" fx:id="btnReservas" maxWidth="Infinity" styleClass="sidebar-btn"/>
             <Button text="&#x1F3F7;&#xFE0F; QR Mesas" onAction="#navigate" fx:id="btnQR" maxWidth="Infinity" styleClass="sidebar-btn"/>
             <Button text="&#x2699;&#xFE0F; Configuración" onAction="#navigate" fx:id="btnConfig" maxWidth="Infinity" styleClass="sidebar-btn"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Button text="&#x1F4B0; Caja" onAction="#navigate" fx:id="btnCaja" maxWidth="Infinity" styleClass="sidebar-btn" style="-fx-background-color: #D4A574; -fx-text-fill: white; -fx-font-weight: bold;"/>
         </VBox>
     </left>
     <center>

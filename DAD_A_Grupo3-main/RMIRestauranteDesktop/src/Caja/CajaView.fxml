@@ -3,63 +3,72 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="Caja.CajaController" style="-fx-background-color: #FAF6F0;">
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="Caja.CajaController">
     <top>
-        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-background-color: #1B4332; -fx-padding: 12 20;">
-            <Label text="Caja - Cobro por Item" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header">
+            <padding><Insets top="14" right="24" bottom="14" left="24"/></padding>
+            <Label text="&#x1F4B0; Caja" styleClass="header-title"/>
             <HBox HBox.hgrow="ALWAYS"/>
-            <Button fx:id="btnAbrirCaja" text="Abrir / Cerrar Caja" onAction="#abrirCaja" style="-fx-background-color: #D4A574; -fx-text-fill: white; -fx-font-size: 12;"/>
-            <Button fx:id="btnTicket" text="Ver Ticket" onAction="#verTicket" style="-fx-background-color: #2D6A4F; -fx-text-fill: white; -fx-font-size: 12;"/>
+            <Button fx:id="btnAbrirCaja" text="Abrir / Cerrar Caja" onAction="#abrirCaja" styleClass="header-btn"/>
+            <Button fx:id="btnTicket" text="Ver Ticket" onAction="#verTicket" styleClass="header-btn"/>
         </HBox>
     </top>
     <center>
-        <VBox spacing="10">
-            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label text="Buscar comanda:" style="-fx-font-size: 13; -fx-text-fill: #1B4332;"/>
-                <TextField fx:id="txtBuscar" promptText="IdMovimiento o Código Comanda" prefWidth="300"/>
+        <VBox spacing="12">
+            <padding><Insets top="16" right="20" bottom="16" left="20"/></padding>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtBuscar" promptText="N° mesa, ID o código de comanda..." prefWidth="300" HBox.hgrow="ALWAYS"/>
                 <Button fx:id="btnBuscar" text="Buscar" onAction="#buscarComanda" styleClass="btn-primary"/>
+                <Button fx:id="btnListar" text="Comandas Activas" onAction="#listarComandas" styleClass="btn-secondary"/>
             </HBox>
             <Label fx:id="lblError" text="" style="-fx-text-fill: #E74C3C; -fx-font-size: 12;" visible="false"/>
-            <Separator/>
+
+            <TableView fx:id="tblComandas" prefHeight="140">
+                <columns>
+                    <TableColumn fx:id="colComMesa" text="Mesa" prefWidth="60"/>
+                    <TableColumn fx:id="colComCodigo" text="Código" prefWidth="130"/>
+                    <TableColumn fx:id="colComCliente" text="Cliente" prefWidth="150"/>
+                    <TableColumn fx:id="colComTotal" text="Total" prefWidth="90"/>
+                    <TableColumn fx:id="colComEstado" text="Estado" prefWidth="110"/>
+                    <TableColumn fx:id="colComAccion" text="" prefWidth="60"/>
+                </columns>
+            </TableView>
+
             <HBox spacing="20" VBox.vgrow="ALWAYS">
                 <VBox spacing="8" HBox.hgrow="ALWAYS">
-                    <Label text="Información de la Comanda" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
-                    <GridPane hgap="15" vgap="8">
-                        <Label text="Mesa:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-weight: bold;"/>
+                    <Label text="Información de la Comanda" styleClass="page-title" style="-fx-font-size: 14;"/>
+                    <GridPane hgap="15" vgap="6">
+                        <Label text="Mesa:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                         <Label fx:id="lblMesa" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                        <Label text="Cliente:" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-weight: bold;"/>
+                        <Label text="Cliente:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                         <Label fx:id="lblCliente" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                        <Label text="Mozo:" GridPane.columnIndex="0" GridPane.rowIndex="2" style="-fx-font-weight: bold;"/>
+                        <Label text="Mozo:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                         <Label fx:id="lblMozo" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-                        <Label text="Fecha:" GridPane.columnIndex="0" GridPane.rowIndex="3" style="-fx-font-weight: bold;"/>
+                        <Label text="Fecha:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
                         <Label fx:id="lblFecha" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
                     </GridPane>
-                    <Separator/>
-                    <Label text="Items de la Comanda" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
-                    <TableView fx:id="tblItems" VBox.vgrow="ALWAYS" prefHeight="250">
+                    <Label text="Items" styleClass="page-title" style="-fx-font-size: 14; -fx-padding: 8 0 0 0;"/>
+                    <TableView fx:id="tblItems" VBox.vgrow="ALWAYS" prefHeight="200">
                         <columns>
                             <TableColumn fx:id="colPresentacion" text="Presentación" prefWidth="180"/>
                             <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
                             <TableColumn fx:id="colPrecioUnit" text="P. Unitario" prefWidth="90"/>
                             <TableColumn fx:id="colTotal" text="Total" prefWidth="90"/>
-                            <TableColumn fx:id="colPagado" text="Pagado" prefWidth="70"/>
+                            <TableColumn fx:id="colPagado" text="Pagado" prefWidth="65"/>
                         </columns>
                     </TableView>
                 </VBox>
-                <VBox spacing="10" prefWidth="260" style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;">
-                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                <VBox spacing="10" prefWidth="270" styleClass="stats-card">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
                     <Label text="Resumen de Pago" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
-                    <Label fx:id="lblSubtotal" text="Subtotal: S/ 0.00" style="-fx-font-size: 13;"/>
-                    <Label fx:id="lblTotalPagar" text="Total a Pagar: S/ 0.00" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblSubtotal" text="Pendiente: S/ 0.00" style="-fx-font-size: 13;"/>
                     <Separator/>
-                    <Label text="Forma de Pago" style="-fx-font-size: 12; -fx-text-fill: #555;"/>
-                    <ComboBox fx:id="cboFormaPago" prefWidth="220" promptText="Seleccionar..."/>
-                    <Label text="Monto Recibido" style="-fx-font-size: 12; -fx-text-fill: #555;"/>
-                    <TextField fx:id="txtMontoRecibido" promptText="0.00" prefWidth="220"/>
-                    <Label fx:id="lblVuelto" text="Vuelto: S/ 0.00" style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
-                    <Separator/>
-                    <Button fx:id="btnCobrar" text="Cobrar" onAction="#cobrar" prefWidth="220" prefHeight="40" styleClass="btn-primary"/>
+                    <Label text="Forma de Pago" style="-fx-font-size: 12; -fx-text-fill: #636E72;"/>
+                    <ComboBox fx:id="cboFormaPago" prefWidth="230"/>
+                    <Label text="Monto recibido" style="-fx-font-size: 12; -fx-text-fill: #636E72;"/>
+                    <TextField fx:id="txtMontoRecibido" promptText="0.00" prefWidth="230"/>
+                    <Label fx:id="lblVuelto" text="Vuelto: S/ 0.00" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
+                    <Button fx:id="btnCobrar" text="Cobrar" onAction="#cobrar" prefWidth="230" prefHeight="42" styleClass="btn-primary"/>
                 </VBox>
             </HBox>
         </VBox>

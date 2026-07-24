@@ -87,6 +87,7 @@ public class DashboardController {
             case "btnReservas": fxml = "ReservaBuffetView.fxml"; break;
             case "btnQR": fxml = "QRView.fxml"; break;
             case "btnConfig": fxml = "ConfigView.fxml"; break;
+            case "btnCaja": fxml = "../Caja/CajaView.fxml"; break;
             default: return;
         }
         try {
