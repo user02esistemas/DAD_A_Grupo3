@@ -2,16 +2,29 @@ $BASE = Split-Path -Parent $MyInvocation.MyCommand.Path
 $JFX_DIR = "$BASE\Lib\javafx-21.0.2"
 $ZXING_DIR = "$BASE\Lib\zxing-3.5.3"
 
-# Find JDK
-$realJdk = $env:JAVA_HOME
-if (-not $realJdk -or -not (Test-Path "$realJdk\bin\javac.exe")) {
-    $javacCmd = Get-Command "javac.exe" -ErrorAction SilentlyContinue
-    if ($javacCmd) { $realJdk = (Get-Item $javacCmd.Source).Directory.Parent.FullName }
+# Find JDK (same logic as setup.ps1)
+$JAVA_HOME_CANDIDATES = @(
+    $env:JAVA_HOME,
+    "C:\Program Files\Java\jdk-21.0.10",
+    "C:\Program Files\Java\jdk-21",
+    "C:\Program Files\Eclipse Adoptium\jdk-21.*",
+    "C:\Program Files\Microsoft\jdk-21.*"
+)
+$realJdk = $null
+foreach ($cand in $JAVA_HOME_CANDIDATES) {
+    if ($cand -and (Test-Path "$cand\bin\java.exe")) { $realJdk = $cand; break }
+}
+if (-not $realJdk) {
+    $javaCmd = Get-Command "java.exe" -ErrorAction SilentlyContinue
+    if ($javaCmd) { $realJdk = (Get-Item $javaCmd.Source).Directory.Parent.FullName }
 }
 if (-not $realJdk -or -not (Test-Path "$realJdk\bin\java.exe")) {
-    Write-Host "JDK 21+ no encontrado" -ForegroundColor Red; exit 1
+    Write-Host "JDK 21+ no encontrado" -ForegroundColor Red
+    Write-Host "Instala JDK 21 desde: https://adoptium.net/" -ForegroundColor Yellow
+    exit 1
 }
 $JAVA = "$realJdk\bin\java.exe"
+Write-Host "JDK: $realJdk" -ForegroundColor Cyan
 
 $CP = "$BASE\build\classes"
 $CP += ";$BASE\..\Lib\RMIRestauranteInterface.jar"
