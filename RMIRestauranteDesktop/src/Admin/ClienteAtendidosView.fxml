@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.ClienteAtendidosController">
+    <top><Label text="Clientes Atendidos" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1B4332;"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
+    <center>
+        <VBox spacing="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <HBox spacing="8">
+                <TextField fx:id="txtBuscar" promptText="Buscar por nombre..." prefWidth="300"/>
+                <Button fx:id="btnBuscar" text="Buscar" onAction="#buscar"/>
+                <Button fx:id="btnRefrescar" text="Refrescar" onAction="#cargarDatos"/>
+            </HBox>
+            <TableView fx:id="tblDatos" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colNombre" text="Nombre" prefWidth="150"/>
+                    <TableColumn fx:id="colApellido" text="Apellido" prefWidth="150"/>
+                    <TableColumn fx:id="colDocumento" text="Documento" prefWidth="120"/>
+                    <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="120"/>
+                    <TableColumn fx:id="colEmail" text="Email" prefWidth="200"/>
+                </columns>
+            </TableView>
+            <Label fx:id="lblTotal" text="Total: 0 clientes"/>
+        </VBox>
+    </center>
+</BorderPane>

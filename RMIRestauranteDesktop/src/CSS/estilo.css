@@ -1,0 +1,43 @@
+.login-title {
+    -fx-text-fill: white;
+    -fx-font-family: 'Playfair Display', serif;
+    -fx-font-size: 28;
+    -fx-font-weight: bold;
+}
+.login-input {
+    -fx-background-color: rgba(255,255,255,0.15);
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: rgba(255,255,255,0.5);
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10 14;
+    -fx-font-size: 14;
+}
+.login-input:focused {
+    -fx-border-color: #D4A574;
+    -fx-background-color: rgba(255,255,255,0.2);
+}
+.login-btn {
+    -fx-background-color: #D4A574;
+    -fx-text-fill: #5C4033;
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.login-btn:hover {
+    -fx-background-color: #E8C9A0;
+}
+.sidebar-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2D3436;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 16;
+    -fx-font-size: 14;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.sidebar-btn:hover {
+    -fx-background-color: #F0E6D8;
+}

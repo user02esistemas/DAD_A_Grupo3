@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="Caja.CajaController" style="-fx-background-color: #FAF6F0;">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-background-color: #1B4332; -fx-padding: 12 20;">
+            <Label text="Caja - Cobro por Item" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            <HBox HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnAbrirCaja" text="Abrir / Cerrar Caja" onAction="#abrirCaja" style="-fx-background-color: #D4A574; -fx-text-fill: white; -fx-font-size: 12;"/>
+            <Button fx:id="btnTicket" text="Ver Ticket" onAction="#verTicket" style="-fx-background-color: #2D6A4F; -fx-text-fill: white; -fx-font-size: 12;"/>
+        </HBox>
+    </top>
+    <center>
+        <VBox spacing="10">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="Buscar comanda:" style="-fx-font-size: 13; -fx-text-fill: #1B4332;"/>
+                <TextField fx:id="txtBuscar" promptText="IdMovimiento o Código Comanda" prefWidth="300"/>
+                <Button fx:id="btnBuscar" text="Buscar" onAction="#buscarComanda" style="-fx-background-color: #1B4332; -fx-text-fill: white;"/>
+            </HBox>
+            <Label fx:id="lblError" text="" style="-fx-text-fill: #E74C3C; -fx-font-size: 12;" visible="false"/>
+            <Separator/>
+            <HBox spacing="20" VBox.vgrow="ALWAYS">
+                <VBox spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Información de la Comanda" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
+                    <GridPane hgap="15" vgap="8">
+                        <Label text="Mesa:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblMesa" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <Label text="Cliente:" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblCliente" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                        <Label text="Mozo:" GridPane.columnIndex="0" GridPane.rowIndex="2" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblMozo" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                        <Label text="Fecha:" GridPane.columnIndex="0" GridPane.rowIndex="3" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblFecha" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    </GridPane>
+                    <Separator/>
+                    <Label text="Items de la Comanda" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
+                    <TableView fx:id="tblItems" VBox.vgrow="ALWAYS" prefHeight="250">
+                        <columns>
+                            <TableColumn fx:id="colPresentacion" text="Presentación" prefWidth="180"/>
+                            <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
+                            <TableColumn fx:id="colPrecioUnit" text="P. Unitario" prefWidth="90"/>
+                            <TableColumn fx:id="colTotal" text="Total" prefWidth="90"/>
+                            <TableColumn fx:id="colPagado" text="Pagado" prefWidth="70"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                <VBox spacing="10" prefWidth="260" style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    <Label text="Resumen de Pago" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
+                    <Label fx:id="lblSubtotal" text="Subtotal: S/ 0.00" style="-fx-font-size: 13;"/>
+                    <Label fx:id="lblTotalPagar" text="Total a Pagar: S/ 0.00" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <Separator/>
+                    <Label text="Forma de Pago" style="-fx-font-size: 12; -fx-text-fill: #555;"/>
+                    <ComboBox fx:id="cboFormaPago" prefWidth="220" promptText="Seleccionar..."/>
+                    <Label text="Monto Recibido" style="-fx-font-size: 12; -fx-text-fill: #555;"/>
+                    <TextField fx:id="txtMontoRecibido" promptText="0.00" prefWidth="220"/>
+                    <Label fx:id="lblVuelto" text="Vuelto: S/ 0.00" style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
+                    <Separator/>
+                    <Button fx:id="btnCobrar" text="Cobrar" onAction="#cobrar" prefWidth="220" prefHeight="40" style="-fx-background-color: #1B4332; -fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                </VBox>
+            </HBox>
+        </VBox>
+    </center>
+</BorderPane>
