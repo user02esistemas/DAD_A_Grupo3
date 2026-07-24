@@ -11,10 +11,22 @@
             MozoControl ctrl = new MozoControl();
             Mozo mozo = ctrl.DATOS.login(usuario, clave);
             if (mozo != null) {
-                session.setAttribute("mozoSesion", mozo);
-                String destino = "cocina".equals(rol) ? "cocina.jsp" : "mozo.jsp";
-                response.sendRedirect(destino);
-                return;
+                if ("cocina".equals(rol) && !"cocina".equals(mozo.getTipo())) {
+                    error = "Este usuario no tiene acceso a cocina";
+                } else if (!"cocina".equals(rol) && "cocina".equals(mozo.getTipo())) {
+                    error = "Este usuario no tiene acceso a mozo";
+                } else {
+                    if ("cocina".equals(rol)) {
+                        session.setAttribute("cocinaSesion", mozo);
+                        session.removeAttribute("mozoSesion");
+                        response.sendRedirect("cocina.jsp");
+                    } else {
+                        session.setAttribute("mozoSesion", mozo);
+                        session.removeAttribute("cocinaSesion");
+                        response.sendRedirect("mozo.jsp");
+                    }
+                    return;
+                }
             } else {
                 error = "Credenciales incorrectas";
             }

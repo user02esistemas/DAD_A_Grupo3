@@ -3,8 +3,9 @@
 <%@page import="java.util.List"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
-    Mozo mozo = (Mozo) session.getAttribute("mozoSesion");
-    if (mozo == null) { response.sendRedirect("mozoLogin.jsp"); return; }
+    Mozo mozo = (Mozo) session.getAttribute("cocinaSesion");
+    if (mozo == null) { response.sendRedirect("mozoLogin.jsp?rol=cocina"); return; }
+    if (!"cocina".equals(mozo.getTipo())) { response.sendRedirect("mozoLogin.jsp?rol=cocina&err=Acceso+solo+para+cocina"); return; }
 
     MovimientoPedidoControl mpCtrl = new MovimientoPedidoControl();
     List<MovimientoPedido> pedidosCocina = mpCtrl.DATOS.listarParaCocina();

@@ -45,6 +45,9 @@
         presPorCategoria.get(cat).add(p);
     }
 
+    // Get all mesas for filtering by salon
+    List<Mesa> todasLasMesas = mesaCtrl.DATOS.listar("");
+
     // Build comandas list with mesa IDs
     List<Movimiento> comandasIds = movCtrl.DATOS.listarActivos();
     List<Movimiento> comandasAbiertas = new ArrayList<>();
@@ -57,6 +60,109 @@
             full.setNumeroMesa(tmp.getNroDocumento() + "|" + idPrimeraMesa);
             comandasAbiertas.add(full);
         }
+    }
+
+    // Filter mozo's own comandas
+    List<Movimiento> misComandas = new ArrayList<>();
+    for (Movimiento mc : comandasAbiertas) {
+        if (mc.getIdMozo() == mozo.getIdMozo()) misComandas.add(mc);
+    }
+
+    // Build mesa info: grouping, active comanda, comanda state
+    Map<Integer, Boolean> mesaEnGrupo = new HashMap<>();
+    Map<Integer, Integer> mesaIdComandaActiva = new HashMap<>();
+    Map<Integer, Integer> mesaEstadoComanda = new HashMap<>();
+    Map<Integer, String> mesaGrupoNombre = new HashMap<>();
+    for (Mesa m : todasLasMesas) {
+        int idM = m.getIdMesa();
+        try { mesaEnGrupo.put(idM, grupoCtrl.DATOS.tieneGrupo(idM)); } catch (Exception e) { mesaEnGrupo.put(idM, false); }
+        int idCA = movCtrl.DATOS.obtenerIdMovimientoActivoPorMesa(idM);
+        if (idCA > 0) {
+            mesaIdComandaActiva.put(idM, idCA);
+            try {
+                Movimiento mcInfo = movCtrl.DATOS.buscar(idCA);
+                if (mcInfo != null) mesaEstadoComanda.put(idM, mcInfo.getIdEstadoComanda());
+            } catch (Exception e) {}
+        }
+    }
+    // Resolve group names for mesas that are grouped
+    List<MesaGrupo> todosGrupos = grupoCtrl.DATOS.listar();
+    Map<Integer, String> grupoNombre = new HashMap<>();
+    for (MesaGrupo g : todosGrupos) {
+        grupoNombre.put(g.getIdMesaGrupo(), g.getNombre());
+        List<Integer> mesasG = grupoCtrl.DATOS.obtenerMesasDelGrupo(g.getIdMesaGrupo());
+        for (int idM : mesasG) {
+            mesaGrupoNombre.put(idM, g.getNombre());
+        }
+    }
+
+    // Per-comanda item state summary for all active comandas
+    Map<Integer, String> comandaEstadoBadge = new HashMap<>();
+    Map<Integer, String> comandaEstadoColor = new HashMap<>();
+    Map<Integer, Boolean> comandaTodosEntregados = new HashMap<>();
+    for (Movimiento mov : comandasAbiertas) {
+        int idM = mov.getIdMovimiento();
+        int ec = mov.getIdEstadoComanda();
+        String badge = "Tomando Pedido";
+        String color = "var(--primary)";
+        boolean todosEntregado = false;
+        if (ec == 3) {
+            try {
+                List<MovimientoPedido> items = mpCtrl.DATOS.listarPorMovimiento(idM);
+                boolean tieneListo = false;
+                todosEntregado = items != null && !items.isEmpty();
+                if (items != null) {
+                    for (MovimientoPedido item : items) {
+                        int ep = item.getIdEstadoPedido();
+                        if (ep == 3) tieneListo = true;
+                        if (ep != 4) todosEntregado = false;
+                    }
+                }
+                if (todosEntregado && !items.isEmpty()) {
+                    badge = "Consumiendo";
+                    color = "#3498DB";
+                } else if (tieneListo) {
+                    badge = "Listo para entregar";
+                    color = "#27AE60";
+                } else {
+                    badge = "En Cocina";
+                    color = "#E67E22";
+                }
+            } catch (Exception e) {
+                badge = "En Cocina";
+                color = "#E67E22";
+            }
+        }
+        comandaEstadoBadge.put(idM, badge);
+        comandaEstadoColor.put(idM, color);
+        comandaTodosEntregados.put(idM, todosEntregado);
+    }
+
+    // Build mesa-comanda info for Control Mesas (all active comandas)
+    Map<Integer, Integer> mesaComId = new HashMap<>();
+    Map<Integer, Integer> mesaComEstado = new HashMap<>();
+    Map<Integer, String> mesaComInfo = new HashMap<>();
+    for (Movimiento mov : comandasAbiertas) {
+        String codigo = mov.getCodigoComanda() != null ? mov.getCodigoComanda() : "";
+        String cliente = mov.getNombreCliente() != null ? mov.getNombreCliente() : "—";
+        try {
+            List<MovimientoMesa> mms = mmCtrl.DATOS.listarPorMovimiento(mov.getIdMovimiento());
+            for (MovimientoMesa mm : mms) {
+                int idM = mm.getIdMesa();
+                mesaComId.put(idM, mov.getIdMovimiento());
+                mesaComEstado.put(idM, mov.getIdEstadoComanda());
+                mesaComInfo.put(idM, codigo + "|" + cliente);
+            }
+        } catch (Exception e) {}
+    }
+
+    // Unique colors per MesaGrupo
+    String[] palette = {"#D4A574","#7FB3D8","#A3D4A5","#E8A0A0","#C8A0E0","#F0D080","#80D0D0","#F0B080","#B0B0E0","#A0E0C0","#E0B0A0","#D0D080"};
+    Map<Integer, String> grupoColorMap = new HashMap<>();
+    int cIdx = 0;
+    for (MesaGrupo g : todosGrupos) {
+        grupoColorMap.put(g.getIdMesaGrupo(), palette[cIdx % palette.length]);
+        cIdx++;
     }
 %>
 <!DOCTYPE html>
@@ -76,9 +182,54 @@
             cursor:pointer; transition:var(--transition); font-weight:600; font-size:14px;
         }
         .mesa-btn:hover { border-color:var(--primary); transform:scale(1.05); }
-        .mesa-btn.libre { border-color:var(--success); }
-        .mesa-btn.ocupada { border-color:var(--warning); background:rgba(243,156,18,0.08); }
-        .mesa-btn i { font-size:28px; margin-bottom:6px; }
+        .mesa-grid { gap:16px; }
+        .mesa-btn {
+            aspect-ratio:auto; min-height:145px; padding:16px 12px 12px; position:relative;
+            cursor:default; overflow:hidden; display:flex; flex-direction:column; align-items:center;
+            border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.25s ease;
+            background:var(--bg-card);
+        }
+        .mesa-btn:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.10); }
+        .mesa-btn.libre { border-color:var(--success); cursor:pointer; background:rgba(39,174,96,0.04); }
+        .mesa-btn.libre:hover { background:rgba(39,174,96,0.10); }
+        .mesa-btn.ocupada { border-color:#E67E22; background:rgba(230,126,34,0.04); }
+        .mesa-btn.ocupada:hover { background:rgba(230,126,34,0.08); }
+        .mesa-btn.agrupada { background:rgba(212,165,116,0.06); }
+        .mesa-btn.agrupada .mesa-icon { color:var(--color-grupo,#D4A574); }
+        .mesa-btn.enviada {
+            border-color:#b0b0b0; background:rgba(245,245,245,0.5);
+        }
+        .mesa-btn.enviada:hover { transform:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .mesa-btn .mesa-icon { font-size:24px; display:block; margin-bottom:4px; opacity:0.7; }
+        .mesa-btn .mesa-num { font-weight:800; font-size:17px; letter-spacing:-0.5px; }
+        .mesa-btn .mesa-cap { font-size:10px; color:var(--text-light); display:block; margin-top:1px; }
+        .mesa-btn .mesa-grupo { font-size:9px; font-weight:700; display:block; margin-top:2px; text-transform:uppercase; letter-spacing:0.3px; }
+        .mesa-btn .mesa-comanda {
+            font-size:9px; color:var(--text-light); line-height:1.4; margin-top:6px; padding:5px 8px;
+            background:rgba(0,0,0,0.03); border-radius:8px; width:100%; word-break:break-all;
+            border:1px solid rgba(0,0,0,0.04);
+        }
+        .mesa-btn .mesa-comanda .cod { font-weight:700; color:var(--accent); font-size:10px; }
+        .mesa-btn .mesa-actions {
+            display:flex; gap:6px; margin-top:8px; width:100%; justify-content:center; flex-wrap:wrap;
+        }
+        .mesa-btn .mesa-actions a, .mesa-btn .mesa-actions button {
+            font-size:10px; padding:5px 10px; border-radius:8px; font-weight:600; cursor:pointer;
+            text-decoration:none; display:inline-flex; align-items:center; gap:4px; border:none;
+            transition:all 0.2s;
+        }
+        .mesa-btn .btn-ver { background:var(--primary); color:white; }
+        .mesa-btn .btn-ver:hover { background:#1a3d2e; }
+        .mesa-btn .btn-accion { background:rgba(0,0,0,0.04); font-size:10px; font-weight:600; }
+        .mesa-btn .btn-accion:hover { background:rgba(0,0,0,0.08); opacity:1; }
+        .mesa-btn .btn-accion[disabled] { opacity:0.4; }
+        .mesa-btn input[type=checkbox] { 
+            position:absolute; opacity:0; width:100%; height:100%; top:0; left:0; margin:0; cursor:pointer; z-index:2;
+        }
+        .mesa-btn:has(input[type=checkbox]:checked) { 
+            border-color:var(--primary) !important; background:rgba(27,67,50,0.08); box-shadow:0 0 0 3px rgba(27,67,50,0.15); 
+        }
+        .mesa-btn:has(input[type=checkbox]:checked) .mesa-icon { color:var(--primary); transform:scale(1.15); }
         .step-bar { display:flex; justify-content:center; gap:20px; margin-bottom:24px; flex-wrap:wrap; }
         .step { display:flex; align-items:center; gap:6px; color:var(--text-light); font-size:13px; }
         .step.active { color:var(--primary); font-weight:700; }
@@ -140,6 +291,19 @@
         .prod-precio { font-weight:700; color:var(--primary); font-size:15px; margin-left:10px; white-space:nowrap; }
         .prod-action { display:flex; align-items:center; gap:4px; margin-left:8px; }
         .prod-action input[type=number] { width:44px; text-align:center; font-size:12px; padding:4px; border:1px solid var(--border); border-radius:6px; }
+        .bottom-nav {
+            position:fixed; bottom:0; left:0; right:0; background:white; border-top:2px solid var(--border);
+            display:flex; justify-content:space-around; padding:8px 0; z-index:100;
+            box-shadow:0 -2px 12px rgba(0,0,0,0.08);
+        }
+        .bottom-nav a {
+            display:flex; flex-direction:column; align-items:center; gap:2px;
+            text-decoration:none; font-size:10px; color:var(--text-light); font-weight:600;
+            transition:var(--transition); padding:4px 12px; border-radius:8px;
+        }
+        .bottom-nav a:hover, .bottom-nav a.active { color:var(--primary); background:rgba(27,67,50,0.06); }
+        .bottom-nav a i { font-size:18px; }
+        body { padding-bottom:64px; }
     </style>
 </head>
 <body>
@@ -156,9 +320,21 @@
         <div class="card fade-in">
             <div class="card-header"><i class="fa-solid fa-gauge-high"></i> Panel Principal</div>
             <div class="card-body">
+                <% String errMsg = request.getParameter("err");
+                   if (errMsg != null && !errMsg.isEmpty()) { %>
+                <div style="background:#FDE8E8;color:#E74C3C;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> <%= errMsg %>
+                </div>
+                <% } %>
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="showTab('comandas')">
-                        <i class="fa-solid fa-receipt"></i> Comandas Abiertas
+                    <button class="tab-btn active" onclick="showTab('miscomandas')">
+                        <i class="fa-solid fa-user-check"></i> Mis Mesas
+                        <% if (!misComandas.isEmpty()) { %>
+                        <span style="background:var(--primary);color:white;border-radius:50%;padding:2px 7px;font-size:11px;margin-left:4px;"><%= misComandas.size() %></span>
+                        <% } %>
+                    </button>
+                    <button class="tab-btn" onclick="showTab('comandas')">
+                        <i class="fa-solid fa-receipt"></i> Pendientes
                         <% if (!comandasAbiertas.isEmpty()) { %>
                         <span style="background:var(--danger);color:white;border-radius:50%;padding:2px 7px;font-size:11px;margin-left:4px;"><%= comandasAbiertas.size() %></span>
                         <% } %>
@@ -168,7 +344,63 @@
                     </button>
                 </div>
 
-                <div class="tab-content active" id="tab-comandas">
+                <!-- Mis Mesas (atendidas por mi) -->
+                <div class="tab-content active" id="tab-miscomandas">
+                    <% if (misComandas.isEmpty()) { %>
+                    <div class="empty-state">
+                        <i class="fa-solid fa-inbox"></i>
+                        <p>No tienes mesas asignadas</p>
+                        <p style="font-size:12px;">Acepta una comanda para empezar a atender</p>
+                    </div>
+                    <% } else {
+                        for (Movimiento mov : misComandas) {
+                            String numMesaRaw = mov.getNumeroMesa() != null ? mov.getNumeroMesa() : "?|0";
+                            String[] pairs = numMesaRaw.split(", ");
+                            String numMesa = pairs.length > 0 ? pairs[0].split("\\|")[0] : "?";
+                            int idMesaMov = 0;
+                            if (pairs.length > 0) {
+                                String[] p = pairs[0].split("\\|");
+                                if (p.length > 1) { try { idMesaMov = Integer.parseInt(p[1]); } catch (Exception ex) {} }
+                            }
+                            String cliente = mov.getNombreCliente() != null ? mov.getNombreCliente() : "Sin cliente";
+                            String codigo = mov.getCodigoComanda() != null ? mov.getCodigoComanda() : "";
+                    %>
+                    <%
+                        String badgeLabel = comandaEstadoBadge.getOrDefault(mov.getIdMovimiento(), "Tomando Pedido");
+                        String badgeColor = comandaEstadoColor.getOrDefault(mov.getIdMovimiento(), "var(--primary)");
+                        String borderColor = badgeColor;
+                        int ec = mov.getIdEstadoComanda();
+                    %>
+                    <div class="comanda-card" style="border-left-color:<%= borderColor %>;">
+                        <div class="info">
+                            <div class="mesa-label"><i class="fa-solid fa-chair"></i> <%= numMesa %></div>
+                            <div class="cliente-label"><i class="fa-solid fa-user"></i> <%= cliente %></div>
+                            <div class="codigo"><%= codigo %></div>
+                            <span style="display:inline-block;margin-top:4px;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;background:<%= badgeColor %>20;color:<%= badgeColor %>;">
+                                <i class="fa-solid fa-<%= ec == 3 ? "fire" : "clock" %>"></i> <%= badgeLabel %>
+                            </span>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <a href="mozo.jsp?paso=confirmar&idMesa=<%= idMesaMov %>&idMov=<%= mov.getIdMovimiento() %>" class="btn btn-sm btn-primary">
+                                <i class="fa-solid fa-clipboard-check"></i> Atender
+                            </a>
+                            <% if (ec == 1 || ec == 2) { %>
+                            <form action="accionMozo.jsp" method="post" style="margin:0;" onsubmit="return confirm('¿Cancelar esta comanda? Se liberarán las mesas asociadas.')">
+                                <input type="hidden" name="accion" value="cancelarComanda">
+                                <input type="hidden" name="idMovimiento" value="<%= mov.getIdMovimiento() %>">
+                                <input type="hidden" name="idMesa" value="<%= idMesaMov %>">
+                                <button type="submit" class="btn btn-sm btn-danger" style="background:#E74C3C;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+                                    <i class="fa-solid fa-ban"></i> Cancelar
+                                </button>
+                            </form>
+                            <% } %>
+                        </div>
+                    </div>
+                    <% } } %>
+                </div>
+
+                <!-- Comandas Pendientes -->
+                <div class="tab-content" id="tab-comandas">
                     <% if (comandasAbiertas.isEmpty()) { %>
                     <div class="empty-state">
                         <i class="fa-solid fa-inbox"></i>
@@ -178,9 +410,13 @@
                     <% } else {
                         for (Movimiento mov : comandasAbiertas) {
                             String numMesaRaw = mov.getNumeroMesa() != null ? mov.getNumeroMesa() : "?|0";
-                            String[] parts = numMesaRaw.split("\\|");
-                            String numMesa = parts.length > 0 ? parts[0] : "?";
-                            int idMesaMov = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+                            String[] pairs = numMesaRaw.split(", ");
+                            String numMesa = pairs.length > 0 ? pairs[0].split("\\|")[0] : "?";
+                            int idMesaMov = 0;
+                            if (pairs.length > 0) {
+                                String[] p = pairs[0].split("\\|");
+                                if (p.length > 1) { try { idMesaMov = Integer.parseInt(p[1]); } catch (Exception ex) {} }
+                            }
                             String cliente = mov.getNombreCliente() != null ? mov.getNombreCliente() : "Sin cliente";
                             String codigo = mov.getCodigoComanda() != null ? mov.getCodigoComanda() : "";
                             boolean sinMozo = mov.getIdMozo() == 0;
@@ -213,29 +449,83 @@
                 </div>
 
                 <div class="tab-content" id="tab-mesas">
-                    <p style="margin-bottom:16px;color:var(--text-light);font-size:14px;">Gestiona el estado de las mesas manualmente</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                        <p style="margin:0;color:var(--text-light);font-size:13px;">
+                            <i class="fa-solid fa-info-circle"></i> Liberar cancela comandas no enviadas a cocina.
+                        </p>
+                        <input type="text" id="buscarMesaCtrl" class="form-control" placeholder="Buscar mesa..." oninput="filtrarMesasCtrl()" style="width:180px;font-size:12px;padding:6px 10px;">
+                    </div>
                     <% for (Salon s : salones) {
-                        List<Mesa> mesasSalon = mesaCtrl.DATOS.listar(String.valueOf(s.getIdSalon()));
+                        List<Mesa> mesasSalon = new ArrayList<>();
+                        int libres = 0, ocupadas = 0;
+                        for (Mesa mx : todasLasMesas) {
+                            if (mx.getIdSalon() == s.getIdSalon()) {
+                                mesasSalon.add(mx);
+                                boolean l = mx.getNombreEstadoMesa() != null && mx.getNombreEstadoMesa().equalsIgnoreCase("Libre");
+                                if (l) libres++; else ocupadas++;
+                            }
+                        }
                     %>
-                    <div class="salon-title"><i class="fa-solid fa-door-open"></i> <%= s.getNombre() %></div>
+                    <div class="salon-title" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span><i class="fa-solid fa-door-open"></i> <%= s.getNombre() %></span>
+                        <span style="font-size:11px;font-weight:400;color:var(--text-light);">
+                            <span style="color:var(--success);font-weight:600;"><%= libres %></span> libres
+                            &middot;
+                            <span style="color:var(--warning);font-weight:600;"><%= ocupadas %></span> ocupadas
+                        </span>
+                    </div>
                     <div class="mesa-grid" style="margin-bottom:16px;">
                         <% for (Mesa m : mesasSalon) {
+                            int idM = m.getIdMesa();
                             boolean libre = m.getNombreEstadoMesa() != null && m.getNombreEstadoMesa().equalsIgnoreCase("Libre");
-                            int idEstadoActual = libre ? 1 : 2;
+                            boolean enGrupo = mesaEnGrupo.getOrDefault(idM, false);
+                            Integer idCom = mesaComId.get(idM);
+                            Integer estCom = mesaComEstado.get(idM);
+                            String comInfo = mesaComInfo.get(idM);
+                            boolean puedeLiberar = libre || (idCom != null && estCom != null && (estCom == 1 || estCom == 2));
+                            String claseExtra = "";
+                            String grupoColor = "";
+                            if (enGrupo) {
+                                claseExtra = " agrupada";
+                                String gName = mesaGrupoNombre.getOrDefault(idM, "");
+                                for (MesaGrupo g : todosGrupos) {
+                                    if (g.getNombre().equals(gName)) {
+                                        grupoColor = grupoColorMap.getOrDefault(g.getIdMesaGrupo(), "#D4A574");
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!libre && estCom != null && estCom >= 3) claseExtra += " enviada";
+                            String codCom = ""; String cliCom = "";
+                            if (comInfo != null) { String[] parts = comInfo.split("\\|"); codCom = parts.length > 0 ? parts[0] : ""; cliCom = parts.length > 1 ? parts[1] : ""; }
+                            String styleGrupo = enGrupo ? (";border-color:" + grupoColor + ";--color-grupo:" + grupoColor) : "";
                         %>
-                        <div class="mesa-btn <%= libre ? "libre" : "ocupada" %>" data-numero="<%= m.getNumero() %>">
-                            <i class="fa-solid fa-chair"></i>
-                            M<%= m.getNumero() %>
-                            <span style="font-size:11px; font-weight:400; color:var(--text-light);"><%= m.getCapacidad() %>p</span>
-                            <form action="accionMozo.jsp" method="post" style="margin-top:4px;">
-                                <input type="hidden" name="accion" value="cambiarEstadoMesa">
-                                <input type="hidden" name="idMesa" value="<%= m.getIdMesa() %>">
-                                <input type="hidden" name="nuevoEstado" value="<%= libre ? 2 : 1 %>">
-                                <button type="submit" style="border:none;background:none;color:<%= libre ? "var(--warning)" : "var(--success)" %>;font-size:10px;cursor:pointer;font-weight:600;">
-                                    <i class="fa-solid fa-<%= libre ? "lock" : "unlock" %>"></i>
-                                    <%= libre ? "Ocupar" : "Liberar" %>
-                                </button>
-                            </form>
+                        <div class="mesa-btn <%= libre ? "libre" : "ocupada" %><%= claseExtra %>" data-numero="<%= m.getNumero() %>" style="<%= styleGrupo %>">
+                            <i class="fa-solid fa-<%= enGrupo ? "link" : "chair" %> mesa-icon"></i>
+                            <span class="mesa-num">M<%= m.getNumero() %></span>
+                            <span class="mesa-cap"><%= m.getCapacidad() %> pers.</span>
+                            <% if (enGrupo) { String gName = mesaGrupoNombre.getOrDefault(idM, ""); %>
+                            <span class="mesa-grupo" style="color:<%= grupoColor %>;"><i class="fa-solid fa-layer-group"></i> <%= gName %></span>
+                            <% } %>
+                            <% if (!libre && comInfo != null) { %>
+                            <div class="mesa-comanda">
+                                <span class="cod"><%= codCom %></span> &middot; <%= cliCom %>
+                            </div>
+                            <% } %>
+                            <div class="mesa-actions">
+                                <% if (!libre && idCom != null) { %>
+                                <a href="mozo.jsp?paso=confirmar&idMesa=<%= idM %>&idMov=<%= idCom %>" class="btn-ver"><i class="fa-solid fa-eye"></i> Ver</a>
+                                <% } %>
+                                <form action="accionMozo.jsp" method="post" style="margin:0;">
+                                    <input type="hidden" name="accion" value="cambiarEstadoMesa">
+                                    <input type="hidden" name="idMesa" value="<%= idM %>">
+                                    <input type="hidden" name="nuevoEstado" value="<%= libre ? 2 : 1 %>">
+                                    <button type="submit" class="btn-accion" style="color:<%= !puedeLiberar ? "#999" : (libre ? "var(--warning)" : "var(--success)") %>;cursor:<%= !puedeLiberar ? "not-allowed" : "pointer" %>;" <%= !puedeLiberar ? "disabled" : "" %>>
+                                        <i class="fa-solid fa-<%= libre ? "lock" : (puedeLiberar ? "unlock" : "ban") %>"></i>
+                                        <%= libre ? "Ocupar" : (estCom != null && estCom >= 3 ? "Cocina" : "Liberar") %>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         <% } %>
                     </div>
@@ -252,64 +542,113 @@
 
         <% } else if ("seleccionar".equals(paso)) { %>
         <div class="card fade-in">
-            <div class="card-header"><i class="fa-solid fa-table"></i> Seleccionar Mesa</div>
+            <div class="card-header"><i class="fa-solid fa-table"></i> Seleccionar Mesa(s)</div>
             <div class="card-body">
-                <input type="text" id="buscarMesa" class="form-control" placeholder="Buscar mesa..." oninput="filtrarMesas()" style="margin-bottom:16px;">
-                <% for (Salon s : salones) {
-                    List<Mesa> mesasSalon = mesaCtrl.DATOS.listar(String.valueOf(s.getIdSalon()));
-                %>
-                <div class="salon-title"><i class="fa-solid fa-door-open"></i> <%= s.getNombre() %></div>
-                <div class="mesa-grid" style="margin-bottom:12px;">
-                    <% for (Mesa m : mesasSalon) {
-                        boolean libre = m.getNombreEstadoMesa() != null && m.getNombreEstadoMesa().equalsIgnoreCase("Libre");
-                        String clase = libre ? "libre" : "ocupada";
+                <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">Selecciona una o varias mesas para la nueva comanda.</p>
+                <form id="formSelMesas" action="mozo.jsp" method="get">
+                    <input type="hidden" name="paso" value="cliente">
+                    <% for (Salon s : salones) {
+                        List<Mesa> mesasSalon = new ArrayList<>();
+                        for (Mesa mx : todasLasMesas) { if (mx.getIdSalon() == s.getIdSalon()) mesasSalon.add(mx); }
                     %>
-                    <a href="mozo.jsp?paso=cliente&idMesa=<%= m.getIdMesa() %>" class="mesa-btn <%= clase %>" data-numero="<%= m.getNumero() %>">
-                        <i class="fa-solid fa-chair"></i>
-                        M<%= m.getNumero() %>
-                        <span style="font-size:11px; font-weight:400; color:var(--text-light);"><%= m.getCapacidad() %>p</span>
-                    </a>
+                    <div class="salon-title" style="margin-top:12px;"><i class="fa-solid fa-door-open"></i> <%= s.getNombre() %></div>
+                    <div class="mesa-grid" style="margin-bottom:8px;">
+                        <% for (Mesa m : mesasSalon) {
+                            boolean libre = m.getNombreEstadoMesa() != null && m.getNombreEstadoMesa().equalsIgnoreCase("Libre");
+                            String clase = libre ? "libre" : "ocupada";
+                        %>
+                        <label class="mesa-btn <%= clase %>" data-numero="<%= m.getNumero() %>" data-id-salon="<%= m.getIdSalon() %>" style="cursor:pointer;position:relative;">
+                            <input type="checkbox" name="idMesa" value="<%= m.getIdMesa() %>" <%= !libre ? "disabled" : "" %>>
+                            <i class="fa-solid fa-chair mesa-icon"></i>
+                            <span class="mesa-num">M<%= m.getNumero() %></span>
+                            <span class="mesa-cap"><%= m.getCapacidad() %> pers.</span>
+                        </label>
+                        <% } %>
+                    </div>
                     <% } %>
-                </div>
-                <% } %>
-                <a href="mozo.jsp?paso=dashboard" class="btn btn-outline" style="width:100%;justify-content:center;margin-top:12px;">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-                </a>
+                    <div style="display:flex;gap:8px;margin-top:16px;">
+                        <a href="mozo.jsp?paso=dashboard" class="btn btn-outline" style="flex:1;justify-content:center;">
+                            <i class="fa-solid fa-arrow-left"></i> Volver
+                        </a>
+                        <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center;" onclick="var c=document.querySelectorAll('input[name=idMesa]:checked');if(c.length===0){alert('Selecciona al menos una mesa');return false;}var s=new Set();c.forEach(function(e){s.add(e.closest('.mesa-btn').dataset.idSalon)});if(s.size>1){alert('No puedes unir mesas de diferentes salones');return false;}">
+                            <i class="fa-solid fa-arrow-right"></i> Continuar
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
         <% } else if ("cliente".equals(paso)) { %>
         <div class="card fade-in">
-            <div class="card-header"><i class="fa-solid fa-user-plus"></i> Datos del Cliente</div>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                <span><i class="fa-solid fa-user-plus"></i> Datos del Cliente</span>
+                <span style="font-size:11px;background:var(--accent);color:var(--secondary);padding:4px 12px;border-radius:20px;font-weight:700;">
+                    <i class="fa-solid fa-chair"></i> Mesa(s): <%= idMesaStr.replaceAll("\\|\\d+", "").trim() %>
+                </span>
+            </div>
             <div class="card-body">
-                <form action="mozo.jsp" method="get">
-                    <input type="hidden" name="paso" value="pedido">
-                    <input type="hidden" name="idMesa" value="<%= idMesaStr %>">
-                    <div class="form-group">
-                        <label>Nombre del Cliente</label>
-                        <input type="text" name="clienteNombre" class="form-control" required>
+                <form action="accionMozo.jsp" method="post">
+                    <input type="hidden" name="accion" value="crearComanda">
+                    <% String[] idMesasSel = request.getParameterValues("idMesa");
+                       if (idMesasSel != null) for (String idms : idMesasSel) { %>
+                    <input type="hidden" name="idMesa" value="<%= idms %>">
+                    <% } %>
+
+                    <!-- QR-style form -->
+                    <div style="background:linear-gradient(135deg,#f8f6f3,#f0ece6);border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid rgba(0,0,0,0.04);">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                            <div style="width:40px;height:40px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--secondary);">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700;font-size:14px;color:var(--text);">Datos del cliente</div>
+                                <div style="font-size:11px;color:var(--text-light);">Opcional — si no ingresas, la comanda será anónima</div>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div style="grid-column:1/-1;">
+                                <label style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:4px;">Nombre completo</label>
+                                <input type="text" name="clienteNombre" class="form-control" placeholder="Ej: Juan Pérez" style="padding:10px 14px;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:4px;">Tipo doc.</label>
+                                <select name="idTipoDocumento" class="form-control" style="padding:10px 14px;font-size:13px;">
+                                    <option value="1">DNI</option>
+                                    <option value="2">RUC</option>
+                                    <option value="3">Carné</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:4px;">N° Documento</label>
+                                <input type="text" name="clienteDoc" class="form-control" placeholder="Opcional" style="padding:10px 14px;font-size:14px;">
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:4px;">Teléfono</label>
+                                <input type="text" name="clienteTel" class="form-control" placeholder="Opcional" style="padding:10px 14px;font-size:14px;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Tipo Documento</label>
-                        <select name="idTipoDocumento" class="form-control">
-                            <option value="1">DNI</option>
-                            <option value="2">RUC</option>
-                            <option value="3">Carnet</option>
-                        </select>
+
+                    <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-light);cursor:pointer;margin-bottom:16px;padding:12px 16px;background:rgba(39,174,96,0.06);border-radius:12px;border:1px solid rgba(39,174,96,0.2);transition:all 0.2s;">
+                        <input type="checkbox" name="sinDatos" value="1" id="chkSinDatos" onchange="document.getElementById('msgGenerico').style.display=this.checked?'block':'none'">
+                        <i class="fa-solid fa-user-slash" style="color:var(--success);font-size:16px;"></i>
+                        <span><strong>Sin datos</strong> — usar cliente genérico</span>
+                    </label>
+                    <div id="msgGenerico" style="display:none;background:rgba(39,174,96,0.08);border:1px solid rgba(39,174,96,0.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1a7a3a;">
+                        <i class="fa-solid fa-check-circle"></i> Se registrará como <strong>Cliente General</strong> (DNI: 00000000, Tel: 999999999). Los datos del formulario serán ignorados.
                     </div>
-                    <div class="form-group">
-                        <label>Numero Documento</label>
-                        <input type="text" name="clienteDoc" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Telefono</label>
-                        <input type="text" name="clienteTel" class="form-control">
-                    </div>
-                    <div style="display:flex; gap:8px; margin-top:16px;">
-                        <a href="mozo.jsp?paso=seleccionar" class="btn btn-outline" style="flex:1;justify-content:center;">
+
+                    <div style="display:flex;gap:8px;">
+                        <a href="mozo.jsp?paso=seleccionar" class="btn btn-outline" style="flex:1;justify-content:center;padding:12px;">
                             <i class="fa-solid fa-arrow-left"></i> Volver
                         </a>
-                        <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center;">
+                        <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center;padding:12px;">
+                            <i class="fa-solid fa-check"></i> Crear Comanda
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
                             <i class="fa-solid fa-arrow-right"></i> Siguiente
                         </button>
                     </div>
@@ -377,15 +716,8 @@
                 </div>
                 <% catIdx++; } } %>
 
-                <div style="display:flex; gap:8px; margin-top:12px;">
-                    <a href="mozo.jsp?paso=dashboard" class="btn btn-outline" style="flex:1;justify-content:center;">
-                        <i class="fa-solid fa-arrow-left"></i> Volver
-                    </a>
-                    <% if (idMovimientoActivo > 0) { %>
-                    <a href="mozo.jsp?paso=confirmar&idMesa=<%= idMesaStr %><%= idMovQS %>" class="btn btn-primary" style="flex:2;justify-content:center;">
-                        <i class="fa-solid fa-clipboard-check"></i> Revisar Pedido
-                    </a>
-                    <% } %>
+                <div style="margin-top:8px;font-size:11px;color:var(--text-light);text-align:center;">
+                    <i class="fa-solid fa-arrow-up"></i> Usa el menú inferior para navegar
                 </div>
             </div>
         </div>
@@ -495,17 +827,34 @@
                 %>
                 <div style="margin-bottom:12px;">
                     <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;"><%= cat %></div>
-                    <% for (MovimientoPedido mp : itemsCat) { %>
+                    <% for (MovimientoPedido mp : itemsCat) {
+                        int ep = mp.getIdEstadoPedido();
+                        String[] estLabels = {"","Recibido","Preparando","Listo","Entregado"};
+                        String[] estColors = {"","#999","#E67E22","#27AE60","#3498DB"};
+                        String estLabel = ep >= 1 && ep <= 4 ? estLabels[ep] : "";
+                        String estColor = ep >= 1 && ep <= 4 ? estColors[ep] : "#999";
+                        boolean puedeEliminar = movFull != null && (movFull.getIdEstadoComanda() == 1 || movFull.getIdEstadoComanda() == 2);
+                    %>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
                         <div style="flex:1;min-width:0;">
                             <div style="font-weight:500;font-size:13px;"><%= mp.getNombrePresentacion() != null ? mp.getNombrePresentacion() : "—" %></div>
                         </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <% if (ep > 0) { %>
+                            <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:<%= estColor %>20;color:<%= estColor %>;"><%= estLabel %></span>
+                            <% } %>
                             <span style="font-size:12px;color:var(--text-light);">x<%= mp.getCantidad() %></span>
                             <span style="font-weight:600;font-size:13px;color:var(--primary);">S/ <%= String.format("%.2f", mp.getTotal()) %></span>
+                            <% if (movFull != null && movFull.getIdEstadoComanda() == 3 && ep != 4) { %>
+                            <a href="accionMozo.jsp?accion=entregarItem&idMovimiento=<%= idMovimientoActivo %>&idPresentacion=<%= mp.getIdPresentacion() %>&idMesa=<%= idMesaStr %>" style="color:#27AE60;font-size:14px;text-decoration:none;padding:4px;" title="Entregar item">
+                                <i class="fa-solid fa-hand"></i>
+                            </a>
+                            <% } %>
+                            <% if (puedeEliminar) { %>
                             <a href="accionMozo.jsp?accion=eliminarItem&idMovimiento=<%= idMovimientoActivo %>&idPresentacion=<%= mp.getIdPresentacion() %>&idMesa=<%= idMesaStr %>" style="color:var(--danger);font-size:14px;text-decoration:none;padding:4px;" onclick="return confirm('¿Eliminar este item?')">
                                 <i class="fa-solid fa-trash-can"></i>
                             </a>
+                            <% } %>
                         </div>
                     </div>
                     <% } %>
@@ -519,20 +868,58 @@
                 </div>
 
                 <% } %>
-                <div style="display:flex; gap:8px; margin-top:16px;">
-                    <a href="mozo.jsp?paso=pedido&idMesa=<%= idMesaStr %><%= idMovQS %>" class="btn btn-outline" style="flex:1;justify-content:center;">
-                        <i class="fa-solid fa-arrow-left"></i> Agregar Más
-                    </a>
-                    <% if (idMovimientoActivo > 0) { %>
-                    <form action="accionMozo.jsp" method="post" style="flex:2;">
-                        <input type="hidden" name="accion" value="enviarCocina">
+                <% if (idMovimientoActivo > 0 && movFull != null) {
+                    int ec = movFull.getIdEstadoComanda();
+                    if (ec == 1 || ec == 2) { %>
+                <form action="accionMozo.jsp" method="post" style="display:flex;gap:8px;margin-top:16px;">
+                    <input type="hidden" name="accion" value="enviarCocina">
+                    <input type="hidden" name="idMesa" value="<%= idMesaStr %>">
+                    <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+                        <i class="fa-solid fa-fire-burner"></i> Enviar a Cocina
+                    </button>
+                </form>
+                <form action="accionMozo.jsp" method="post" style="margin-top:8px;" onsubmit="return confirm('¿Cancelar toda la comanda? Se liberarán las mesas y se descartarán los items.')">
+                    <input type="hidden" name="accion" value="cancelarComanda">
+                    <input type="hidden" name="idMovimiento" value="<%= movFull.getIdMovimiento() %>">
+                    <input type="hidden" name="idMesa" value="<%= idMesaStr %>">
+                    <button type="submit" class="btn btn-outline" style="width:100%;justify-content:center;border-color:#E74C3C;color:#E74C3C;">
+                        <i class="fa-solid fa-ban"></i> Cancelar Comanda
+                    </button>
+                </form>
+                <% } else if (ec == 3) {
+                    boolean todosEntregados = !pedidos.isEmpty();
+                    boolean hayListos = false;
+                    for (MovimientoPedido mp : pedidos) {
+                        int ep = mp.getIdEstadoPedido();
+                        if (ep == 3) hayListos = true;
+                        if (ep != 4) todosEntregados = false;
+                    }
+                    String estadoLabel, estadoIcon, estadoColor, estadoBg;
+                    if (todosEntregados && !pedidos.isEmpty()) {
+                        estadoLabel = "Consumiendo"; estadoIcon = "fa-utensils"; estadoColor = "#3498DB"; estadoBg = "rgba(52,152,219,0.08)";
+                    } else if (hayListos) {
+                        estadoLabel = "Listo para entregar"; estadoIcon = "fa-check-circle"; estadoColor = "#27AE60"; estadoBg = "rgba(39,174,96,0.08)";
+                    } else {
+                        estadoLabel = "En Cocina"; estadoIcon = "fa-fire-burner"; estadoColor = "#E67E22"; estadoBg = "rgba(230,126,34,0.08)";
+                    }
+                %>
+                <div style="margin-top:16px;padding:14px;background:<%= estadoBg %>;border:2px dashed <%= estadoColor %>;border-radius:12px;text-align:center;">
+                    <i class="fa-solid <%= estadoIcon %>" style="font-size:24px;color:<%= estadoColor %>;display:block;margin-bottom:6px;"></i>
+                    <div style="font-weight:600;font-size:14px;color:<%= estadoColor %>;"><%= estadoLabel %></div>
+                    <div style="font-size:12px;color:var(--text-light);margin-top:4px;">Para pedido adicional, ve a <strong>Pedido</strong> y agrega productos. Se abrirá una nueva comanda.</div>
+                    <% if (!todosEntregados || pedidos.isEmpty()) { %>
+                    <form action="accionMozo.jsp" method="post" style="margin-top:12px;" onsubmit="return confirm('¿Entregar todos los items a la mesa?')">
+                        <input type="hidden" name="accion" value="entregarPedido">
+                        <input type="hidden" name="idMovimiento" value="<%= movFull.getIdMovimiento() %>">
                         <input type="hidden" name="idMesa" value="<%= idMesaStr %>">
-                        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
-                            <i class="fa-solid fa-fire-burner"></i> Enviar a Cocina
+                        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;background:#27AE60;">
+                            <i class="fa-solid fa-hand"></i> Entregar Todo
                         </button>
                     </form>
                     <% } %>
                 </div>
+                <% } %>
+                <% } %>
             </div>
         </div>
         <% } %>
@@ -634,6 +1021,12 @@
                 c.style.display = (c.dataset.nombre || '').includes(f) ? '' : 'none';
             });
         }
+        function filtrarMesasCtrl() {
+            var f = document.getElementById('buscarMesaCtrl').value.toLowerCase();
+            document.querySelectorAll('#tab-mesas .mesa-btn').forEach(function(b) {
+                b.style.display = (b.dataset.numero || '').includes(f) ? '' : 'none';
+            });
+        }
 
         document.addEventListener('click', function(e) {
             var tab = e.target.closest('.cat-tab');
@@ -645,6 +1038,8 @@
                 s.classList.toggle('hidden', s.getAttribute('data-cat') !== idx);
             });
         });
+
+        function goDashboard() { location.href = 'mozo.jsp?paso=dashboard'; }
 
         function onWSMessage(msg) {
             var toast = document.createElement('div');
@@ -673,5 +1068,12 @@
     <% String wsRol = "mozo"; %>
     <%@ include file="wsCliente.jspf" %>
     <script>WS.conectar('mozo');</script>
+    <% if (!"dashboard".equals(paso)) { %>
+    <nav class="bottom-nav">
+        <a href="mozo.jsp?paso=dashboard" class="<%= "dashboard".equals(paso) ? "active" : "" %>"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        <a href="mozo.jsp?paso=pedido&idMesa=<%= idMesaStr %><%= idMovQS %>" class="<%= "pedido".equals(paso) ? "active" : "" %>"><i class="fa-solid fa-cart-shopping"></i> Pedido</a>
+        <a href="mozo.jsp?paso=confirmar&idMesa=<%= idMesaStr %><%= idMovQS %>" class="<%= "confirmar".equals(paso) ? "active" : "" %>"><i class="fa-solid fa-clipboard-check"></i> Revisar</a>
+    </nav>
+    <% } %>
 </body>
 </html>

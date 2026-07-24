@@ -1,10 +1,11 @@
 <%@page import="Control.*"%>
 <%@page import="DTO.*"%>
 <%@page import="java.util.*"%>
+<%@page import="java.util.UUID"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
     Mozo mozo = (Mozo) session.getAttribute("mozoSesion");
-    if (mozo == null) { response.sendRedirect("mozoLogin.jsp"); return; }
+    if (mozo == null || "cocina".equals(mozo.getTipo())) { response.sendRedirect("mozoLogin.jsp"); return; }
 
     String accion = request.getParameter("accion");
 
@@ -12,14 +13,89 @@
     MovimientoPedidoControl mpCtrl = new MovimientoPedidoControl();
     PresentacionControl presCtrl = new PresentacionControl();
     MesaControl mesaCtrl = new MesaControl();
+    ClienteControl cliCtrl = new ClienteControl();
+
+    if ("crearComanda".equals(accion)) {
+        String[] idMesasArr = request.getParameterValues("idMesa");
+        if (idMesasArr == null || idMesasArr.length == 0) {
+            response.sendRedirect("mozo.jsp?paso=seleccionar&err=Seleccione+al+menos+una+mesa");
+            return;
+        }
+        // Validate all mesas belong to the same salon
+        Set<Integer> salones = new HashSet<>();
+        for (String s : idMesasArr) {
+            for (Mesa mx : mesaCtrl.DATOS.listar("")) {
+                if (mx.getIdMesa() == Integer.parseInt(s)) {
+                    salones.add(mx.getIdSalon());
+                    break;
+                }
+            }
+        }
+        if (salones.size() > 1) {
+            response.sendRedirect("mozo.jsp?paso=seleccionar&err=No+puedes+unir+mesas+de+diferentes+salones");
+            return;
+        }
+        int idMesaPrimera = Integer.parseInt(idMesasArr[0]);
+        String clienteNombre = request.getParameter("clienteNombre");
+        boolean sinDatos = "1".equals(request.getParameter("sinDatos"));
+
+        int idCliente = 0;
+        if (sinDatos) {
+            Cliente gen = cliCtrl.DATOS.buscarPorDocumento("00000000");
+            if (gen == null) {
+                gen = new Cliente();
+                gen.setNombre("Cliente General");
+                gen.setIdTipoDocumento(1);
+                gen.setDocumento("00000000");
+                gen.setTelefono("999999999");
+                boolean creado = cliCtrl.DATOS.insertar(gen);
+                if (creado) idCliente = gen.getIdCliente();
+            } else {
+                idCliente = gen.getIdCliente();
+            }
+        } else if (clienteNombre != null && !clienteNombre.trim().isEmpty()) {
+            Cliente c = new Cliente();
+            c.setNombre(clienteNombre.trim());
+            c.setIdTipoDocumento(request.getParameter("idTipoDocumento") != null ? Integer.parseInt(request.getParameter("idTipoDocumento")) : 1);
+            c.setDocumento(request.getParameter("clienteDoc") != null ? request.getParameter("clienteDoc") : "S/N");
+            c.setTelefono(request.getParameter("clienteTel") != null ? request.getParameter("clienteTel") : "");
+            boolean creado = cliCtrl.DATOS.insertar(c);
+            if (creado) idCliente = c.getIdCliente();
+        }
+
+        List<Integer> mesasList = new ArrayList<>();
+        for (String s : idMesasArr) mesasList.add(Integer.parseInt(s));
+
+        Movimiento mov = new Movimiento();
+        mov.setNroDocumento("");
+        mov.setIdCliente(idCliente);
+        mov.setIdTipoMovimiento(1);
+        mov.setTotalPagar(0);
+        mov.setIdDatosEmpresa(1);
+        mov.setIdEstadoMovimiento(1);
+        mov.setNumPersonas(1);
+        mov.setCodigoComanda("CM-" + UUID.randomUUID().toString().substring(0,8).toUpperCase());
+        mov.setIdMozo(mozo.getIdMozo());
+        mov.setIdEstadoComanda(1);
+        mov.setListaMesas(mesasList);
+
+        boolean ok = movCtrl.DATOS.abrirComanda(mov);
+        if (ok) {
+            response.sendRedirect("mozo.jsp?paso=pedido&idMesa=" + idMesaPrimera + "&idMov=" + mov.getIdMovimiento());
+        } else {
+            response.sendRedirect("mozo.jsp?paso=dashboard&err=Error+al+crear+comanda");
+        }
+        return;
+    }
 
     if ("enviarCocina".equals(accion)) {
         int idMesa = Integer.parseInt(request.getParameter("idMesa"));
         int idMov = movCtrl.DATOS.obtenerIdMovimientoActivoPorMesa(idMesa);
         if (idMov > 0) {
             Movimiento mov = movCtrl.DATOS.buscar(idMov);
-            if (mov != null) {
-                mov.setIdEstadoComanda(2);
+            if (mov != null && (mov.getIdEstadoComanda() == 1 || mov.getIdEstadoComanda() == 2)) {
+                if (mov.getIdMozo() == 0) mov.setIdMozo(mozo.getIdMozo());
+                mov.setIdEstadoComanda(3);
                 movCtrl.DATOS.actualizar(mov);
                 try {
                     NotificacionWebSocket.enviarACocina("{\"tipo\":\"NUEVO_PEDIDO\",\"idMovimiento\":" + idMov + "}");
@@ -107,10 +183,31 @@
         int idPresentacion = Integer.parseInt(request.getParameter("idPresentacion"));
         int cantidad = Integer.parseInt(request.getParameter("cantidad"));
 
+        MovimientoMesaControl mmCtrl = new MovimientoMesaControl();
+        MesaControl mesaCtrlLocal = new MesaControl();
+
         int idMov = movCtrl.DATOS.obtenerIdMovimientoActivoPorMesa(idMesa);
         if (idMov <= 0) {
-            response.sendRedirect("mozo.jsp?paso=dashboard&err=Comanda+no+activa");
-            return;
+            Movimiento nueva = new Movimiento();
+            nueva.setIdCliente(0);
+            nueva.setIdTipoMovimiento(1);
+            nueva.setTotalPagar(0);
+            nueva.setIdDatosEmpresa(1);
+            nueva.setIdEstadoMovimiento(1);
+            nueva.setNumPersonas(1);
+            nueva.setCodigoComanda("CM-" + java.util.UUID.randomUUID().toString().substring(0,8).toUpperCase());
+            nueva.setIdMozo(mozo.getIdMozo());
+            nueva.setIdEstadoComanda(1);
+            List<Integer> mesasList = new ArrayList<>();
+            mesasList.add(idMesa);
+            nueva.setListaMesas(mesasList);
+            boolean creada = movCtrl.DATOS.abrirComandaExtra(nueva);
+            if (creada) {
+                idMov = nueva.getIdMovimiento();
+            } else {
+                response.sendRedirect("mozo.jsp?paso=dashboard&err=No+se+pudo+crear+comanda");
+                return;
+            }
         }
         Movimiento movCheck = movCtrl.DATOS.buscar(idMov);
         if (movCheck == null || (movCheck.getIdEstadoComanda() != 1 && movCheck.getIdEstadoComanda() != 2)) {
@@ -160,9 +257,61 @@
         return;
     }
 
+    if ("entregarItem".equals(accion)) {
+        int idMov = Integer.parseInt(request.getParameter("idMovimiento"));
+        int idPres = Integer.parseInt(request.getParameter("idPresentacion"));
+        int idMesa = Integer.parseInt(request.getParameter("idMesa"));
+        mpCtrl.DATOS.cambiarEstado(idMov, idPres, 4);
+        response.sendRedirect("mozo.jsp?paso=confirmar&idMesa=" + idMesa + "&idMov=" + idMov);
+        return;
+    }
+
+    if ("entregarPedido".equals(accion)) {
+        int idMov = Integer.parseInt(request.getParameter("idMovimiento"));
+        int idMesa = Integer.parseInt(request.getParameter("idMesa"));
+        List<MovimientoPedido> items = mpCtrl.DATOS.listarPorMovimiento(idMov);
+        if (items != null) {
+            for (MovimientoPedido item : items) {
+                mpCtrl.DATOS.cambiarEstado(idMov, item.getIdPresentacion(), 4);
+            }
+        }
+        response.sendRedirect("mozo.jsp?paso=dashboard");
+        return;
+    }
+
+    if ("cancelarComanda".equals(accion)) {
+        int idMov = Integer.parseInt(request.getParameter("idMovimiento"));
+        int idMesa = Integer.parseInt(request.getParameter("idMesa"));
+        boolean ok = movCtrl.DATOS.cancelarComanda(idMov);
+        if (ok) {
+            try {
+                NotificacionWebSocket.enviarACliente(idMov,
+                    "{\"tipo\":\"COMANDA_CANCELADA\",\"idMovimiento\":" + idMov + "}");
+            } catch (Exception e) {}
+        }
+        response.sendRedirect("mozo.jsp?paso=dashboard" + (ok ? "" : "&err=No+se+pudo+cancelar+la+comanda"));
+        return;
+    }
+
     if ("cambiarEstadoMesa".equals(accion)) {
         int idMesa = Integer.parseInt(request.getParameter("idMesa"));
         int nuevoEstado = Integer.parseInt(request.getParameter("nuevoEstado"));
+
+        if (nuevoEstado == 1) {
+            int idMov = movCtrl.DATOS.obtenerIdMovimientoActivoPorMesa(idMesa);
+            if (idMov > 0) {
+                Movimiento mov = movCtrl.DATOS.buscar(idMov);
+                if (mov != null) {
+                    int ec = mov.getIdEstadoComanda();
+                    if (ec == 1 || ec == 2) {
+                        movCtrl.DATOS.cancelarComanda(idMov);
+                    } else {
+                        response.sendRedirect("mozo.jsp?paso=dashboard&err=La+mesa+tiene+comanda+en+cocina,+no+se+puede+liberar");
+                        return;
+                    }
+                }
+            }
+        }
         mesaCtrl.DATOS.cambiarEstado(idMesa, nuevoEstado);
         response.sendRedirect("mozo.jsp?paso=dashboard");
         return;

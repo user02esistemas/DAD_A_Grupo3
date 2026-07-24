@@ -21,6 +21,8 @@ public class MozoDAO extends UnicastRemoteObject implements IMozo {
             ps.setString(2, clave);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    String tipo = "mozo";
+                    try { tipo = rs.getString("Tipo"); if (tipo == null) tipo = "mozo"; } catch (Exception e) { tipo = "mozo"; }
                     return new Mozo(
                         rs.getInt("IdMozo"),
                         rs.getString("Nombre"),
@@ -30,7 +32,8 @@ public class MozoDAO extends UnicastRemoteObject implements IMozo {
                         rs.getString("Clave"),
                         rs.getInt("IdSalon"),
                         rs.getBoolean("Activo"),
-                        rs.getString("NomSalon")
+                        rs.getString("NomSalon"),
+                        tipo
                     );
                 }
             }
@@ -48,6 +51,8 @@ public class MozoDAO extends UnicastRemoteObject implements IMozo {
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
+                String tipo = "mozo";
+                try { tipo = rs.getString("Tipo"); if (tipo == null) tipo = "mozo"; } catch (Exception e) { tipo = "mozo"; }
                 lista.add(new Mozo(
                     rs.getInt("IdMozo"),
                     rs.getString("Nombre"),
@@ -57,7 +62,8 @@ public class MozoDAO extends UnicastRemoteObject implements IMozo {
                     rs.getString("Clave"),
                     rs.getInt("IdSalon"),
                     rs.getBoolean("Activo"),
-                    rs.getString("NomSalon")
+                    rs.getString("NomSalon"),
+                    tipo
                 ));
             }
         } catch (SQLException e) {
@@ -126,6 +132,8 @@ public class MozoDAO extends UnicastRemoteObject implements IMozo {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    String tipo = "mozo";
+                    try { tipo = rs.getString("Tipo"); if (tipo == null) tipo = "mozo"; } catch (Exception e) { tipo = "mozo"; }
                     return new Mozo(
                         rs.getInt("IdMozo"),
                         rs.getString("Nombre"),
@@ -135,7 +143,8 @@ public class MozoDAO extends UnicastRemoteObject implements IMozo {
                         rs.getString("Clave"),
                         rs.getInt("IdSalon"),
                         rs.getBoolean("Activo"),
-                        rs.getString("NomSalon")
+                        rs.getString("NomSalon"),
+                        tipo
                     );
                 }
             }

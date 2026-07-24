@@ -65,7 +65,7 @@ public class MovimientoPedidoDAO extends UnicastRemoteObject implements IMovimie
     @Override
     public List<MovimientoPedido> listarPorMovimiento(int idMovimiento) throws RemoteException {
         List<MovimientoPedido> lista = new ArrayList<>();
-        String sql = "SELECT mp.IdMovimiento, mp.IdPresentacion, mp.Cantidad, mp.Total, mp.Pagado, " +
+        String sql = "SELECT mp.IdMovimiento, mp.IdPresentacion, mp.Cantidad, mp.Total, mp.Pagado, mp.IdEstadoPedido, mp.PrecioUnitario, " +
                 "pre.Nombre AS NomPres, pre.Precio " +
                 "FROM MovimientoPedido mp " +
                 "INNER JOIN Presentacion pre ON mp.IdPresentacion = pre.IdPresentacion " +
@@ -81,6 +81,8 @@ public class MovimientoPedidoDAO extends UnicastRemoteObject implements IMovimie
                 mp.setCantidad(rs.getInt("Cantidad"));
                 mp.setTotal(rs.getDouble("Total"));
                 mp.setPagado(rs.getBoolean("Pagado"));
+                mp.setIdEstadoPedido(rs.getInt("IdEstadoPedido"));
+                mp.setPrecioUnitario(rs.getDouble("PrecioUnitario"));
                 mp.setNombrePresentacion(rs.getString("NomPres"));
                 mp.setPrecioPresentacion(rs.getDouble("Precio"));
                 lista.add(mp);
@@ -177,19 +179,22 @@ public class MovimientoPedidoDAO extends UnicastRemoteObject implements IMovimie
     @Override
     public List<MovimientoPedido> listarParaCocina() throws RemoteException {
         List<MovimientoPedido> lista = new ArrayList<>();
-        String sql = "SELECT mp.*, pre.Nombre AS NomPres, pre.Precio, pr.Nombre AS NomProd, " +
-                "ep.Nombre AS NomEstado, mo.Nombre AS NomMozo, me.Numero AS NumMesa, " +
-                "m.CodigoComanda, tp.Duracion AS TiempoEstimadoProd " +
+        String sql = "SELECT mp.IdMovimiento, mp.IdPresentacion, mp.Cantidad, mp.PrecioUnitario, mp.Total, " +
+                "mp.IdEstadoPedido, mp.FechaInicio, mp.FechaFin, mp.Pagado, " +
+                "pre.Nombre AS NomPres, pre.Precio, pr.Nombre AS NomProd, " +
+                "ep.Nombre AS NomEstado, mo.Nombre AS NomMozo, " +
+                "(SELECT STRING_AGG(me.Numero, ', ') FROM MovimientoMesa mm2 " +
+                " INNER JOIN Mesa me ON mm2.IdMesa = me.IdMesa WHERE mm2.IdMovimiento = m.IdMovimiento) AS NumMesa, " +
+                "m.CodigoComanda, " +
+                "CAST(REGEXP_REPLACE(SPLIT_PART(COALESCE(tp.tiempo, '0'), '-', 1), '[^0-9]', '', 'g') AS INTEGER) AS TiempoPrep " +
                 "FROM MovimientoPedido mp " +
                 "INNER JOIN Presentacion pre ON mp.IdPresentacion = pre.IdPresentacion " +
                 "INNER JOIN Producto pr ON pre.IdProducto = pr.IdProducto " +
                 "INNER JOIN EstadoPedido ep ON mp.IdEstadoPedido = ep.IdEstadoPedido " +
                 "INNER JOIN Movimiento m ON mp.IdMovimiento = m.IdMovimiento " +
                 "LEFT JOIN Mozo mo ON m.IdMozo = mo.IdMozo " +
-                "LEFT JOIN MovimientoMesa mm ON m.IdMovimiento = mm.IdMovimiento " +
-                "LEFT JOIN Mesa me ON mm.IdMesa = me.IdMesa " +
-                "LEFT JOIN TiempoPreparacion tp ON pre.IdTiempoPreparacion = tp.IdTiempoPreparacion " +
-                "WHERE mp.IdEstadoPedido IN (1,2) ORDER BY mp.FechaInicio";
+                "LEFT JOIN TiempoPreparacion tp ON pr.IdTiempoPreparacion = tp.IdTiempoPreparacion " +
+                "WHERE mp.IdEstadoPedido IN (1,2,3) AND m.IdEstadoComanda = 3 ORDER BY mp.FechaInicio";
         try (Connection con = Conexion.getConexion();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -201,9 +206,12 @@ public class MovimientoPedidoDAO extends UnicastRemoteObject implements IMovimie
                 mp.setPrecioUnitario(rs.getDouble("PrecioUnitario"));
                 mp.setTotal(rs.getDouble("Total"));
                 mp.setIdEstadoPedido(rs.getInt("IdEstadoPedido"));
+                mp.setPagado(rs.getBoolean("Pagado"));
                 Timestamp fi = rs.getTimestamp("FechaInicio");
                 if (fi != null) mp.setFechaInicio(fi.toLocalDateTime());
-                mp.setTiempoEstimado(rs.getInt("TiempoEstimado"));
+                Timestamp ff = rs.getTimestamp("FechaFin");
+                if (ff != null) mp.setFechaFin(ff.toLocalDateTime());
+                mp.setTiempoEstimado(rs.getInt("TiempoPrep"));
                 mp.setNombrePresentacion(rs.getString("NomPres"));
                 mp.setPrecioPresentacion(rs.getDouble("Precio"));
                 mp.setNombreProducto(rs.getString("NomProd"));

@@ -26,4 +26,6 @@ public interface IMovimiento extends Remote{
     List<Movimiento> listarPorMozo(int idMozo) throws RemoteException;
     List<Movimiento> listarComandasAbiertas() throws RemoteException;
     boolean abrirComanda(Movimiento obj) throws RemoteException;
+    boolean abrirComandaExtra(Movimiento obj) throws RemoteException;
+    boolean cancelarComanda(int idMovimiento) throws RemoteException;
 }

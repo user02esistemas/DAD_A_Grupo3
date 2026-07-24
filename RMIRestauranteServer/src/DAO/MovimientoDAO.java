@@ -376,6 +376,62 @@ public class MovimientoDAO extends UnicastRemoteObject implements IMovimiento {
     }
 
     @Override
+    public boolean cancelarComanda(int idMovimiento) throws RemoteException {
+        String sqlCheck = "SELECT IdEstadoComanda FROM Movimiento WHERE IdMovimiento = ?";
+        String sqlCancelar = "UPDATE Movimiento SET IdEstadoComanda = 5, IdEstadoMovimiento = 3 WHERE IdMovimiento = ? AND IdEstadoComanda IN (1,2)";
+        String sqlLiberarMesas = "UPDATE Mesa SET IdEstadoMesa = 1 WHERE IdMesa IN " +
+                "(SELECT IdMesa FROM MovimientoMesa WHERE IdMovimiento = ?)";
+        Connection con = null;
+        try {
+            con = Conexion.getConexion();
+            con.setAutoCommit(false);
+
+            try (PreparedStatement ps = con.prepareStatement(sqlCheck)) {
+                ps.setInt(1, idMovimiento);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        int estado = rs.getInt("IdEstadoComanda");
+                        if (estado != 1 && estado != 2) {
+                            con.rollback();
+                            return false;
+                        }
+                    } else {
+                        con.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(sqlCancelar)) {
+                ps.setInt(1, idMovimiento);
+                int updated = ps.executeUpdate();
+                if (updated == 0) {
+                    con.rollback();
+                    return false;
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(sqlLiberarMesas)) {
+                ps.setInt(1, idMovimiento);
+                ps.executeUpdate();
+            }
+
+            con.commit();
+            return true;
+        } catch (SQLException e) {
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ignored) {}
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    @Override
     public Movimiento buscar(String codigoComanda) throws RemoteException {
         String sql = "SELECT m.*, ec.Nombre AS NomEstadoCom, mo.Nombre AS NomMozo, " +
                 "me.Numero AS NumMesa FROM Movimiento m " +
@@ -482,7 +538,7 @@ public class MovimientoDAO extends UnicastRemoteObject implements IMovimiento {
     public List<Movimiento> listarComandasAbiertas() throws RemoteException {
         List<Movimiento> lista = new ArrayList<>();
         String sql = "SELECT m.*, ec.Nombre AS NomEstadoCom, mo.Nombre AS NomMozo, " +
-                "STRING_AGG(me.Numero, ', ') AS Mesas FROM Movimiento m " +
+                "STRING_AGG(CONCAT(me.Numero, '|', me.IdMesa), ', ') AS Mesas FROM Movimiento m " +
                 "INNER JOIN EstadoComanda ec ON m.IdEstadoComanda = ec.IdEstadoComanda " +
                 "LEFT JOIN Mozo mo ON m.IdMozo = mo.IdMozo " +
                 "LEFT JOIN MovimientoMesa mm ON m.IdMovimiento = mm.IdMovimiento " +
@@ -503,6 +559,7 @@ public class MovimientoDAO extends UnicastRemoteObject implements IMovimiento {
                 m.setIdEstadoComanda(rs.getInt("IdEstadoComanda"));
                 m.setNombreEstadoComanda(rs.getString("NomEstadoCom"));
                 m.setNombreMozo(rs.getString("NomMozo"));
+                m.setIdMozo(rs.getInt("IdMozo"));
                 m.setNumeroMesa(rs.getString("Mesas"));
                 lista.add(m);
             }
@@ -563,6 +620,68 @@ public class MovimientoDAO extends UnicastRemoteObject implements IMovimiento {
                         psEstado.addBatch();
                     }
                     psEstado.executeBatch();
+                }
+            }
+
+            con.commit();
+            obj.setIdMovimiento(idGenerado);
+            return true;
+        } catch (SQLException e) {
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ignored) {}
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    @Override
+    public boolean abrirComandaExtra(Movimiento obj) throws RemoteException {
+        String sqlMov = "INSERT INTO Movimiento (Fecha, NroDocumento, IdCliente, IdTipoMovimiento, " +
+                "TotalPagar, IdDatosEmpresa, IdEstadoMovimiento, NumPersonas, " +
+                "CodigoComanda, IdMozo, IdEstadoComanda, IdMesaGrupo) " +
+                "VALUES (NOW(),?,?,?,?,?,?,?,?,?,?,?)";
+        String sqlMM = "INSERT INTO MovimientoMesa (IdMovimiento, IdMesa) VALUES (?, ?)";
+        Connection con = null;
+        try {
+            con = Conexion.getConexion();
+            con.setAutoCommit(false);
+            int idGenerado = 0;
+
+            try (PreparedStatement ps = con.prepareStatement(sqlMov, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, obj.getNroDocumento());
+                ps.setInt(2, obj.getIdCliente());
+                ps.setInt(3, obj.getIdTipoMovimiento());
+                ps.setDouble(4, obj.getTotalPagar());
+                ps.setInt(5, obj.getIdDatosEmpresa());
+                ps.setInt(6, obj.getIdEstadoMovimiento());
+                ps.setInt(7, obj.getNumPersonas());
+                ps.setString(8, obj.getCodigoComanda());
+                if (obj.getIdMozo() > 0) { ps.setInt(9, obj.getIdMozo()); } else { ps.setNull(9, java.sql.Types.INTEGER); }
+                ps.setInt(10, obj.getIdEstadoComanda());
+                if (obj.getIdMesaGrupo() > 0) { ps.setInt(11, obj.getIdMesaGrupo()); } else { ps.setNull(11, java.sql.Types.INTEGER); }
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) idGenerado = rs.getInt(1);
+                }
+            }
+            if (idGenerado <= 0) {
+                con.rollback();
+                return false;
+            }
+
+            if (obj.getListaMesas() != null && !obj.getListaMesas().isEmpty()) {
+                try (PreparedStatement pstmMesa = con.prepareStatement(sqlMM)) {
+                    for (int idMesa : obj.getListaMesas()) {
+                        pstmMesa.setInt(1, idGenerado);
+                        pstmMesa.setInt(2, idMesa);
+                        pstmMesa.addBatch();
+                    }
+                    pstmMesa.executeBatch();
                 }
             }
 

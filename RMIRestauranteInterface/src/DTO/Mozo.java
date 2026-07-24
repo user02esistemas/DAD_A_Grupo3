@@ -12,6 +12,7 @@ public class Mozo implements Serializable {
     private int idSalon;
     private boolean activo;
     private String nombreSalon;
+    private String tipo;
 
     public Mozo() {}
 
@@ -33,6 +34,20 @@ public class Mozo implements Serializable {
         this.idSalon = idSalon;
         this.activo = activo;
         this.nombreSalon = nombreSalon;
+        this.tipo = "mozo";
+    }
+
+    public Mozo(int idMozo, String nombre, String apellido, String telefono, String usuario, String clave, int idSalon, boolean activo, String nombreSalon, String tipo) {
+        this.idMozo = idMozo;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.telefono = telefono;
+        this.usuario = usuario;
+        this.clave = clave;
+        this.idSalon = idSalon;
+        this.activo = activo;
+        this.nombreSalon = nombreSalon;
+        this.tipo = tipo;
     }
 
     public int getIdMozo() { return idMozo; }
@@ -53,4 +68,6 @@ public class Mozo implements Serializable {
     public void setActivo(boolean activo) { this.activo = activo; }
     public String getNombreSalon() { return nombreSalon; }
     public void setNombreSalon(String nombreSalon) { this.nombreSalon = nombreSalon; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 }
