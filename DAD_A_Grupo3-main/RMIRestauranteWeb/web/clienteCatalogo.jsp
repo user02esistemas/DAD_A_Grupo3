@@ -268,13 +268,16 @@
                     boolean enPromo = "En Promocion".equalsIgnoreCase(nomEst);
                 %>
                 <div class="prod-card <%= enPromo ? "promo" : "" %>">
+                    <%
+                    String imgTagId = "img_" + p.getIdPresentacion();
+                    String fallbackId = "fb_" + p.getIdPresentacion();
+                    %>
                     <% if (imgUrl != null && !imgUrl.isEmpty()) { %>
-                    <img src="<%= imgUrl %>" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;margin-right:12px;border:1px solid rgba(0,0,0,0.04);" onerror="this.style.display='none'">
-                    <% } else { %>
-                    <div style="width:48px;height:48px;border-radius:12px;background:<%= enPromo ? "#D4A574" : "#1B4332" %>;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:white;flex-shrink:0;margin-right:12px;">
+                    <img id="<%= imgTagId %>" src="<%= imgUrl %>" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;margin-right:12px;border:1px solid rgba(0,0,0,0.04);" onerror="document.getElementById('<%= imgTagId %>').style.display='none';document.getElementById('<%= fallbackId %>').style.display='flex'">
+                    <% } %>
+                    <div id="<%= fallbackId %>" style="width:48px;height:48px;border-radius:12px;background:<%= enPromo ? "#D4A574" : "#1B4332" %>;display:<%= (imgUrl != null && !imgUrl.isEmpty()) ? "none" : "flex" %>;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:white;flex-shrink:0;margin-right:12px;">
                         <%= nomProd.length() > 0 ? nomProd.substring(0,1).toUpperCase() : "?" %>
                     </div>
-                    <% } %>
                     <div class="prod-body">
                         <div class="prod-nombre"><%= nomProd %></div>
                         <div class="prod-pres"><%= nombrePres %></div>

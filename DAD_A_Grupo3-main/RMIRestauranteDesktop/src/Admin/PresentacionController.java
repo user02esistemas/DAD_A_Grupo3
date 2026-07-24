@@ -24,7 +24,10 @@ public class PresentacionController {
     @FXML private TextField txtBuscar;
     @FXML private Label lblTotal;
 
-    private static final String WEB_IMG_DIR = "../RMIRestauranteWeb/web/img/presentaciones/";
+    private static final String[] WEB_IMG_DIRS = {
+        "../RMIRestauranteWeb/web/img/presentaciones/",
+        "C:/tools/tomcat9/apache-tomcat-9.0.98/webapps/RMIRestauranteWeb/img/presentaciones/"
+    };
 
     @FXML
     private void initialize() {
@@ -46,8 +49,8 @@ public class PresentacionController {
                 setGraphic(new javafx.scene.layout.HBox(4, btnEdit, btnDel));
             }
         });
-        // Ensure web images directory exists
-        new File(WEB_IMG_DIR).mkdirs();
+        // Ensure web images directories exist
+        for (String d : WEB_IMG_DIRS) new File(d).mkdirs();
         cargarDatos();
     }
 
@@ -79,8 +82,10 @@ public class PresentacionController {
         try {
             String ext = file.getName().substring(file.getName().lastIndexOf('.'));
             String destName = System.currentTimeMillis() + ext;
-            File dest = new File(WEB_IMG_DIR + destName);
-            Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            for (String dir : WEB_IMG_DIRS) {
+                File dest = new File(dir + destName);
+                Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
             return "img/presentaciones/" + destName;
         } catch (IOException e) {
             e.printStackTrace();
