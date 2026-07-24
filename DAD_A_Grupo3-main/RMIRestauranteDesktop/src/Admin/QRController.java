@@ -38,6 +38,7 @@ public class QRController {
     private final Map<Integer, BufferedImage> qrBuffered = new HashMap<>();
     private Mesa mesaSeleccionada;
     private String secret = "overos2026";
+    private String baseUrl = "http://192.168.100.131:8081/RMIRestauranteWeb";
 
     @FXML
     private void initialize() {
@@ -64,8 +65,10 @@ public class QRController {
 
         try {
             List<DatosEmpresa> datos = RMIConnection.getDatosEmpresaDAO().listar();
-            if (!datos.isEmpty() && datos.get(0).getQrSecret() != null && !datos.get(0).getQrSecret().isEmpty()) {
-                secret = datos.get(0).getQrSecret();
+            if (!datos.isEmpty()) {
+                DatosEmpresa emp = datos.get(0);
+                if (emp.getQrSecret() != null && !emp.getQrSecret().isEmpty()) secret = emp.getQrSecret();
+                if (emp.getQrBaseUrl() != null && !emp.getQrBaseUrl().isEmpty()) baseUrl = emp.getQrBaseUrl();
             }
         } catch (Exception e) {}
 
@@ -107,7 +110,7 @@ public class QRController {
     private void generarQRMesa(Mesa m) {
         try {
             String hash = sha256("mesa" + m.getIdMesa() + secret).substring(0, 16);
-            String url = "http://localhost:8080/RMIRestauranteWeb/clienteCatalogo.jsp?mesa=" + m.getIdMesa() + "&h=" + hash;
+            String url = baseUrl + "/clienteCatalogo.jsp?mesa=" + m.getIdMesa() + "&h=" + hash;
             BitMatrix matrix = new MultiFormatWriter().encode(url, BarcodeFormat.QR_CODE, 200, 200);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(matrix, "PNG", out);
