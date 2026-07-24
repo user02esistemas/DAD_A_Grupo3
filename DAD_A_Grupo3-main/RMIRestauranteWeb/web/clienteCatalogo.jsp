@@ -264,12 +264,17 @@
                     double precio = p.getPrecio();
                     String nomProd = p.getNombreProducto() != null ? p.getNombreProducto() : "";
                     String nomEst = p.getNombreEstadoPresentacion() != null ? p.getNombreEstadoPresentacion() : "";
+                    String imgUrl = p.getImagenUrl() != null ? p.getImagenUrl() : "";
                     boolean enPromo = "En Promocion".equalsIgnoreCase(nomEst);
                 %>
                 <div class="prod-card <%= enPromo ? "promo" : "" %>">
+                    <% if (imgUrl != null && !imgUrl.isEmpty()) { %>
+                    <img src="<%= imgUrl %>" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;margin-right:12px;border:1px solid rgba(0,0,0,0.04);" onerror="this.style.display='none'">
+                    <% } else { %>
                     <div style="width:48px;height:48px;border-radius:12px;background:<%= enPromo ? "#D4A574" : "#1B4332" %>;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:white;flex-shrink:0;margin-right:12px;">
                         <%= nomProd.length() > 0 ? nomProd.substring(0,1).toUpperCase() : "?" %>
                     </div>
+                    <% } %>
                     <div class="prod-body">
                         <div class="prod-nombre"><%= nomProd %></div>
                         <div class="prod-pres"><%= nombrePres %></div>

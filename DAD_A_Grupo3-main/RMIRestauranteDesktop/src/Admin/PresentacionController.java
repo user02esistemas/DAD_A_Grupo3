@@ -7,6 +7,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.geometry.Insets;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 public class PresentacionController {
@@ -18,6 +23,8 @@ public class PresentacionController {
     @FXML private TableColumn<Presentacion, String> colAcciones;
     @FXML private TextField txtBuscar;
     @FXML private Label lblTotal;
+
+    private static final String WEB_IMG_DIR = "../RMIRestauranteWeb/web/img/presentaciones/";
 
     @FXML
     private void initialize() {
@@ -39,6 +46,8 @@ public class PresentacionController {
                 setGraphic(new javafx.scene.layout.HBox(4, btnEdit, btnDel));
             }
         });
+        // Ensure web images directory exists
+        new File(WEB_IMG_DIR).mkdirs();
         cargarDatos();
     }
 
@@ -61,6 +70,25 @@ public class PresentacionController {
     @FXML private void nuevo() { showDialog(null); }
     private void editar(Presentacion p) { showDialog(p); }
 
+    private String seleccionarYCopiarImagen() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Seleccionar Imagen");
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Imágenes", "*.png","*.jpg","*.jpeg","*.gif","*.webp"));
+        File file = fc.showOpenDialog(null);
+        if (file == null) return null;
+        try {
+            String ext = file.getName().substring(file.getName().lastIndexOf('.'));
+            String destName = System.currentTimeMillis() + ext;
+            File dest = new File(WEB_IMG_DIR + destName);
+            Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return "img/presentaciones/" + destName;
+        } catch (IOException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Error al copiar imagen: " + e.getMessage()).show();
+            return null;
+        }
+    }
+
     private void showDialog(Presentacion existing) {
         Dialog<Presentacion> dialog = new Dialog<>();
         dialog.setTitle(existing == null ? "Nueva Presentacion" : "Editar Presentacion");
@@ -73,8 +101,22 @@ public class PresentacionController {
         precio.setPromptText("Precio");
         TextField stock = new TextField(existing != null ? String.valueOf(existing.getStock()) : "0");
         stock.setPromptText("Stock");
-        TextField imagenUrl = new TextField(existing != null ? existing.getImagenUrl() : "");
-        imagenUrl.setPromptText("URL Imagen (opcional)");
+
+        Label lblImagen = new Label(existing != null && existing.getImagenUrl() != null && !existing.getImagenUrl().isEmpty()
+            ? "Imagen: " + existing.getImagenUrl() : "Sin imagen seleccionada");
+        lblImagen.setStyle("-fx-text-fill: #636E72; -fx-font-size: 11;");
+        Button btnImg = new Button("Seleccionar Imagen");
+        btnImg.setStyle("-fx-background-color: #636E72; -fx-text-fill: white; -fx-font-size: 11; -fx-cursor: hand;");
+        final String[] selectedImgPath = {existing != null ? existing.getImagenUrl() : ""};
+        btnImg.setOnAction(e -> {
+            String path = seleccionarYCopiarImagen();
+            if (path != null) {
+                selectedImgPath[0] = path;
+                lblImagen.setText("Imagen: " + path);
+            }
+        });
+        javafx.scene.layout.HBox imgRow = new javafx.scene.layout.HBox(8, btnImg, lblImagen);
+        imgRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         ComboBox<String> cbProducto = new ComboBox<>();
         cbProducto.setPromptText("Seleccionar Producto");
@@ -104,7 +146,7 @@ public class PresentacionController {
             }
         } catch (Exception e) { e.printStackTrace(); }
 
-        javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox(8, nombre, precio, stock, imagenUrl, cbProducto, cbEstado);
+        javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox(8, nombre, precio, stock, imgRow, cbProducto, cbEstado);
         vbox.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(vbox);
 
@@ -114,7 +156,7 @@ public class PresentacionController {
                 p.setNombre(nombre.getText());
                 try { p.setPrecio(Double.parseDouble(precio.getText())); } catch (Exception ignored) {}
                 try { p.setStock(Integer.parseInt(stock.getText())); } catch (Exception ignored) {}
-                p.setImagenUrl(imagenUrl.getText());
+                p.setImagenUrl(selectedImgPath[0]);
                 String selProd = cbProducto.getValue();
                 if (selProd != null) try { p.setIdProducto(Integer.parseInt(selProd.split(" - ")[0])); } catch (Exception ignored) {}
                 String selEst = cbEstado.getValue();
