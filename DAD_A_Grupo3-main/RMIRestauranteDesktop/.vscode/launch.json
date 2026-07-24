@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Main",
+            "request": "launch",
+            "mainClass": "Main.Main",
+            "args": "",
+            "vmArgs": "--module-path \"${workspaceFolder}/Lib/javafx-sdk-21.0.2/lib\" --add-modules javafx.controls,javafx.fxml",
+            "classPaths": [
+                "${workspaceFolder}/build/classes",
+                "${workspaceFolder}/Lib/RMIRestauranteInterface.jar",
+                "${workspaceFolder}/Lib/postgresql-42.5.4.jar",
+                "${workspaceFolder}/Lib/zxing-core-3.5.3.jar",
+                "${workspaceFolder}/Lib/zxing-javase-3.5.3.jar"
+            ]
+        }
+    ]
+}
