@@ -696,9 +696,15 @@
                         String nombrePres = p.getNombre() != null ? p.getNombre() : "";
                         String nomProd = p.getNombreProducto() != null ? p.getNombreProducto() : "";
                         double precio = p.getPrecio();
+                        String imgUrlMozo = p.getImagenUrl() != null ? p.getImagenUrl() : "";
+                        String imgId = "mi_" + p.getIdPresentacion();
+                        String fbId = "mf_" + p.getIdPresentacion();
                     %>
                     <div class="prod-card" data-nombre="<%= (nomProd + " " + nombrePres).toLowerCase() %>">
-                        <div class="prod-img" style="width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--secondary);flex-shrink:0;margin-right:10px;">
+                        <% if (!imgUrlMozo.isEmpty()) { %>
+                        <img id="<%= imgId %>" src="<%= imgUrlMozo %>" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;margin-right:10px;border:1px solid rgba(0,0,0,0.04);" onerror="document.getElementById('<%= imgId %>').style.display='none';document.getElementById('<%= fbId %>').style.display='flex'">
+                        <% } %>
+                        <div id="<%= fbId %>" class="prod-img" style="width:48px;height:48px;border-radius:10px;background:var(--accent);display:<%= imgUrlMozo.isEmpty() ? "flex" : "none" %>;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--secondary);flex-shrink:0;margin-right:10px;">
                             <%= nomProd.length() > 0 ? nomProd.substring(0,1).toUpperCase() : "?" %>
                         </div>
                         <div class="prod-body" style="flex:1;min-width:0;">
