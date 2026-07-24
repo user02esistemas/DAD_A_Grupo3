@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.MesaController">
+    <top><Label text="Gestión de Mesas" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1B4332;"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
+    <center>
+        <VBox spacing="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <HBox spacing="8">
+                <Button fx:id="btnNuevo" text="Nueva Mesa" onAction="#nuevo" style="-fx-background-color: #1B4332; -fx-text-fill: white;"/>
+                <Button fx:id="btnRefrescar" text="Refrescar" onAction="#cargarDatos"/>
+            </HBox>
+            <TableView fx:id="tblDatos" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+                    <TableColumn fx:id="colNumero" text="Número" prefWidth="80"/>
+                    <TableColumn fx:id="colCapacidad" text="Capacidad" prefWidth="80"/>
+                    <TableColumn fx:id="colSalon" text="Salón" prefWidth="150"/>
+                    <TableColumn fx:id="colEstado" text="Estado" prefWidth="100"/>
+                    <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="150"/>
+                </columns>
+            </TableView>
+            <Label fx:id="lblTotal" text="Total: 0 mesas"/>
+        </VBox>
+    </center>
+</BorderPane>

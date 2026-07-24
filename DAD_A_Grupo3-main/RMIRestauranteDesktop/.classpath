@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
+	<classpathentry kind="lib" path="Lib/RMIRestauranteInterface.jar"/>
+	<classpathentry kind="lib" path="Lib/postgresql-42.5.4.jar"/>
+	<classpathentry kind="lib" path="Lib/zxing-core-3.5.3.jar"/>
+	<classpathentry kind="lib" path="Lib/zxing-javase-3.5.3.jar"/>
+	<classpathentry kind="lib" path="Lib/javafx-sdk-21.0.2/lib/javafx.base.jar"/>
+	<classpathentry kind="lib" path="Lib/javafx-sdk-21.0.2/lib/javafx.controls.jar"/>
+	<classpathentry kind="lib" path="Lib/javafx-sdk-21.0.2/lib/javafx.fxml.jar"/>
+	<classpathentry kind="lib" path="Lib/javafx-sdk-21.0.2/lib/javafx.graphics.jar"/>
+	<classpathentry kind="lib" path="Lib/javafx-sdk-21.0.2/lib/javafx.swing.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>
