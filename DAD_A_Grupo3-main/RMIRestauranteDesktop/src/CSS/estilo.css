@@ -170,7 +170,7 @@
     -fx-padding: 10 4;
 }
 .table-view .column-header .label {
-    -fx-text-fill: #5C4033;
+    -fx-text-fill: #1B4332;
     -fx-font-size: 12;
     -fx-font-weight: bold;
 }
@@ -211,7 +211,7 @@
 
 /* ==================== LABELS ==================== */
 .form-label {
-    -fx-text-fill: #5C4033;
+    -fx-text-fill: #1B4332;
     -fx-font-size: 12;
     -fx-font-weight: bold;
 }
