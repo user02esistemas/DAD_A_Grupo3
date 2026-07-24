@@ -17,6 +17,7 @@
     double precio = pres != null ? pres.getPrecio() : 0;
     String producto = pres != null ? pres.getNombreProducto() : "";
     String inicialProducto = producto != null && !producto.isEmpty() ? producto.substring(0,1).toUpperCase() : "?";
+    String imgUrlAgr = pres != null && pres.getImagenUrl() != null ? pres.getImagenUrl() : "";
     String[] coloresImg = {"#D4A574","#27AE60","#E74C3C","#3498DB","#9B59B6","#F39C12","#1ABC9C","#E67E22"};
     int colorIdx = Math.abs(idPresentacion) % coloresImg.length;
     String colorFondo = coloresImg[colorIdx];
@@ -40,7 +41,10 @@
             <div class="card-header"><i class="fa-solid fa-cart-plus"></i> Agregar al Pedido</div>
             <div class="card-body">
                 <div style="text-align:center; margin-bottom:20px;">
-                    <div style="width:80px;height:80px;border-radius:50%;background:<%= colorFondo %>;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-weight:700;font-size:28px;color:white;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                    <% if (!imgUrlAgr.isEmpty()) { %>
+                    <img id="imgAgr" src="<%= imgUrlAgr %>" style="width:90px;height:90px;border-radius:16px;object-fit:cover;margin:0 auto 12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);display:block;border:1px solid rgba(0,0,0,0.04);" onerror="document.getElementById('imgAgr').style.display='none';document.getElementById('fbAgr').style.display='flex'">
+                    <% } %>
+                    <div id="fbAgr" style="width:80px;height:80px;border-radius:50%;background:<%= colorFondo %>;display:<%= imgUrlAgr.isEmpty() ? "flex" : "none" %>;align-items:center;justify-content:center;margin:0 auto 12px;font-weight:700;font-size:28px;color:white;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
                         <%= inicialProducto %>
                     </div>
                     <p style="color:var(--text-light); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;margin-bottom:4px;"><%= producto %></p>
