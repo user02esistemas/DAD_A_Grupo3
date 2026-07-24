@@ -4,7 +4,7 @@
 <?import javafx.geometry.Insets?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.ClienteAtendidosController">
-    <top><Label text="Clientes Atendidos" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1B4332;"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
+    <top><Label text="Clientes Atendidos" styleClass="page-title"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
     <center>
         <VBox spacing="10">
             <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>

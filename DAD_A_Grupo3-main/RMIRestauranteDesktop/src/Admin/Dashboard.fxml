@@ -5,16 +5,16 @@
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.DashboardController" prefWidth="1024" prefHeight="700" style="-fx-background-color: #FAF6F0;">
     <top>
-        <HBox style="-fx-background-color: #1B4332;" spacing="0" alignment="CENTER_LEFT">
-            <padding><Insets top="12" right="20" bottom="12" left="20"/></padding>
-            <Label text="&#x1F33F; Overo's - Administración" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+        <HBox styleClass="header" spacing="0" alignment="CENTER_LEFT">
+            <padding><Insets top="14" right="24" bottom="14" left="24"/></padding>
+            <Label text="&#x1F33F; Overo's - Administración" styleClass="header-title"/>
             <HBox HBox.hgrow="ALWAYS"/>
-            <Button text="&#x1F504; Cerrar Sesión" onAction="#handleLogout" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 13;"/>
+            <Button text="&#x1F504; Cerrar Sesión" onAction="#handleLogout" styleClass="header-btn"/>
         </HBox>
     </top>
     <left>
-        <VBox style="-fx-background-color: #FFFFFF; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 2, 0);" prefWidth="220" spacing="4">
-            <padding><Insets top="10" bottom="10" left="8" right="8"/></padding>
+        <VBox styleClass="sidebar" prefWidth="230" spacing="2">
+            <padding><Insets top="14" bottom="14" left="10" right="10"/></padding>
             <Button text="&#x1F4CA; Dashboard" onAction="#navigate" fx:id="btnDash" maxWidth="Infinity" styleClass="sidebar-btn"/>
             <Button text="&#x1F37D;&#xFE0F; Productos" onAction="#navigate" fx:id="btnProd" maxWidth="Infinity" styleClass="sidebar-btn"/>
             <Button text="&#x1F4E6; Presentaciones" onAction="#navigate" fx:id="btnPres" maxWidth="Infinity" styleClass="sidebar-btn"/>

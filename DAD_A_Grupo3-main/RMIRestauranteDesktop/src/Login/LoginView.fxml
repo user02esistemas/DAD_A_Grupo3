@@ -4,20 +4,22 @@
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 
-<AnchorPane xmlns:fx="http://javafx.com/fxml" fx:controller="Login.LoginController" style="-fx-background-color: linear-gradient(to bottom right, #1B4332, #2D6A4F);" prefWidth="420" prefHeight="500">
-    <VBox alignment="CENTER" spacing="20" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
-        <padding><Insets top="40" right="40" bottom="40" left="40"/></padding>
-        <Label text="&#x1F33F;" style="-fx-font-size: 48;" VBox.vgrow="NEVER"/>
-        <Label text="Overo's Restaurant" styleClass="login-title"/>
-        <Label text="Sistema de Gestión - Escritorio" style="-fx-text-fill: rgba(255,255,255,0.7); -fx-font-size: 13;"/>
-        <VBox spacing="12" maxWidth="300" VBox.vgrow="NEVER">
-            <padding><Insets top="20"/></padding>
-            <Label text="Usuario" style="-fx-text-fill: white; -fx-font-size: 12;"/>
-            <TextField fx:id="txtUsuario" promptText="admin" styleClass="login-input"/>
-            <Label text="Contraseña" style="-fx-text-fill: white; -fx-font-size: 12;"/>
-            <PasswordField fx:id="txtClave" promptText="admin123" styleClass="login-input"/>
-            <Label fx:id="lblError" text="" style="-fx-text-fill: #F39C12; -fx-font-size: 12;" visible="false"/>
-            <Button fx:id="btnIngresar" text="Ingresar" onAction="#handleLogin" styleClass="login-btn" prefHeight="42"/>
+<AnchorPane xmlns:fx="http://javafx.com/fxml" fx:controller="Login.LoginController" prefWidth="440" prefHeight="560" style="-fx-background-color: linear-gradient(135deg, #1B4332, #2D6A4F);">
+    <VBox alignment="CENTER" spacing="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+        <VBox styleClass="login-card" maxWidth="360" spacing="20" alignment="CENTER">
+            <padding><Insets top="40" right="40" bottom="40" left="40"/></padding>
+            <Label text="&#x1F33F;" style="-fx-font-size: 52;" VBox.vgrow="NEVER"/>
+            <Label text="Overo's Restaurant" styleClass="login-title"/>
+            <Label text="Sistema de Gestión - Escritorio" style="-fx-text-fill: rgba(255,255,255,0.65); -fx-font-size: 13;"/>
+            <VBox spacing="12" maxWidth="300" VBox.vgrow="NEVER">
+                <padding><Insets top="10"/></padding>
+                <Label text="Usuario" style="-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <TextField fx:id="txtUsuario" promptText="admin" styleClass="login-input"/>
+                <Label text="Contraseña" style="-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <PasswordField fx:id="txtClave" promptText="admin123" styleClass="login-input"/>
+                <Label fx:id="lblError" text="" style="-fx-text-fill: #F39C12; -fx-font-size: 12;" visible="false"/>
+                <Button fx:id="btnIngresar" text="Ingresar" onAction="#handleLogin" styleClass="login-btn" prefHeight="44" maxWidth="Infinity"/>
+            </VBox>
         </VBox>
     </VBox>
 </AnchorPane>

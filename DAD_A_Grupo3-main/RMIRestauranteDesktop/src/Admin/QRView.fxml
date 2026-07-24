@@ -5,13 +5,13 @@
 <?import javafx.geometry.Insets?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.QRController">
-    <top><Label text="Generador de QR - Mesas" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1B4332;"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
+    <top><Label text="Generador de QR - Mesas" styleClass="page-title"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
     <center>
         <VBox spacing="10">
             <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
             <HBox spacing="8">
-                <Button fx:id="btnGenerarTodos" text="Generar Todos" onAction="#generarTodos" style="-fx-background-color: #1B4332; -fx-text-fill: white;"/>
-                <Button fx:id="btnGuardarQR" text="Guardar QR Seleccionado" onAction="#guardarQR"/>
+                <Button fx:id="btnGenerarTodos" text="Generar Todos" onAction="#generarTodos" styleClass="btn-primary"/>
+                <Button fx:id="btnGuardarQR" text="Guardar QR Seleccionado" onAction="#guardarQR" styleClass="btn-secondary"/>
             </HBox>
             <HBox spacing="10" VBox.vgrow="ALWAYS">
                 <TableView fx:id="tblDatos" prefWidth="500" VBox.vgrow="ALWAYS">

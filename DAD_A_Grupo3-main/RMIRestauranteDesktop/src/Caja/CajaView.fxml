@@ -18,7 +18,7 @@
             <HBox spacing="8" alignment="CENTER_LEFT">
                 <Label text="Buscar comanda:" style="-fx-font-size: 13; -fx-text-fill: #1B4332;"/>
                 <TextField fx:id="txtBuscar" promptText="IdMovimiento o Código Comanda" prefWidth="300"/>
-                <Button fx:id="btnBuscar" text="Buscar" onAction="#buscarComanda" style="-fx-background-color: #1B4332; -fx-text-fill: white;"/>
+                <Button fx:id="btnBuscar" text="Buscar" onAction="#buscarComanda" styleClass="btn-primary"/>
             </HBox>
             <Label fx:id="lblError" text="" style="-fx-text-fill: #E74C3C; -fx-font-size: 12;" visible="false"/>
             <Separator/>
@@ -59,7 +59,7 @@
                     <TextField fx:id="txtMontoRecibido" promptText="0.00" prefWidth="220"/>
                     <Label fx:id="lblVuelto" text="Vuelto: S/ 0.00" style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #1B4332;"/>
                     <Separator/>
-                    <Button fx:id="btnCobrar" text="Cobrar" onAction="#cobrar" prefWidth="220" prefHeight="40" style="-fx-background-color: #1B4332; -fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <Button fx:id="btnCobrar" text="Cobrar" onAction="#cobrar" prefWidth="220" prefHeight="40" styleClass="btn-primary"/>
                 </VBox>
             </HBox>
         </VBox>

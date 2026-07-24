@@ -4,13 +4,13 @@
 <?import javafx.geometry.Insets?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.MesaController">
-    <top><Label text="Gestión de Mesas" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1B4332;"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
+    <top><Label text="Gestión de Mesas" styleClass="page-title"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
     <center>
-        <VBox spacing="10">
-            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+        <VBox spacing="12">
+            <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
             <HBox spacing="8">
-                <Button fx:id="btnNuevo" text="Nueva Mesa" onAction="#nuevo" style="-fx-background-color: #1B4332; -fx-text-fill: white;"/>
-                <Button fx:id="btnRefrescar" text="Refrescar" onAction="#cargarDatos"/>
+                <Button fx:id="btnNuevo" text="Nueva Mesa" onAction="#nuevo" styleClass="btn-primary"/>
+                <Button fx:id="btnRefrescar" text="Refrescar" onAction="#cargarDatos" styleClass="btn-secondary"/>
             </HBox>
             <TableView fx:id="tblDatos" VBox.vgrow="ALWAYS">
                 <columns>

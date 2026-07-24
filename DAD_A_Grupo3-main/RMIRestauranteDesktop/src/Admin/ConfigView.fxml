@@ -4,7 +4,7 @@
 <?import javafx.geometry.Insets?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="Admin.ConfigController">
-    <top><Label text="Configuración del Sistema" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1B4332;"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
+    <top><Label text="Configuración del Sistema" styleClass="page-title"><BorderPane.margin><Insets top="10" left="10"/></BorderPane.margin></Label></top>
     <center>
         <VBox spacing="10" maxWidth="600">
             <padding><Insets top="10" right="20" bottom="20" left="20"/></padding>
@@ -17,7 +17,7 @@
             <Label text="Configuración QR" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #5C4033;"/>
             <TextField fx:id="txtQrBaseUrl" promptText="URL base (ej: http://localhost:8080/RMIRestauranteWeb)"/>
             <TextField fx:id="txtQrSecret" promptText="Secreto para hash QR"/>
-            <Button fx:id="btnGuardar" text="Guardar Cambios" onAction="#guardar" style="-fx-background-color: #1B4332; -fx-text-fill: white; -fx-font-size: 14;" prefHeight="40"/>
+            <Button fx:id="btnGuardar" text="Guardar Cambios" onAction="#guardar" styleClass="btn-primary"/>
             <Label fx:id="lblStatus" text="" style="-fx-font-size: 13;"/>
         </VBox>
     </center>
